@@ -6,7 +6,7 @@ export const gameTemplates: GameTemplate[] = [
     name: 'Flappy Bird',
     description: 'Navigate a bird through an endless series of pipes. Simple, addictive, and challenging.',
     image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'flying bird',
+    dataAiHint: 'pixelated bird',
     defaultParams: {
       gravity: 0.6,
       lift: -10,
@@ -19,7 +19,7 @@ export const gameTemplates: GameTemplate[] = [
     name: 'Speed Runner',
     description: 'An endless runner where you dodge obstacles and collect power-ups to achieve the highest score.',
     image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'running person',
+    dataAiHint: 'person running',
     defaultParams: {
       playerSpeed: 10,
       obstacleFrequency: 0.02,
@@ -31,10 +31,9 @@ export const gameTemplates: GameTemplate[] = [
     name: 'Whack-the-Mole',
     description: 'Test your reflexes by whacking moles as they pop up from their holes before time runs out.',
     image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'cartoon mole',
+    dataAiHint: 'mole arcade',
     defaultParams: {
       moleVisibleTime: 800,
-      moleHiddenTime: 1200,
       gameDuration: 30,
     },
   },
@@ -43,7 +42,7 @@ export const gameTemplates: GameTemplate[] = [
     name: 'Simple Match-3',
     description: 'Swap adjacent gems to create lines of three or more of the same color to score points.',
     image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'colorful gems',
+    dataAiHint: 'matching gems',
     defaultParams: {
       gridSize: 8,
       numColors: 6,
@@ -55,7 +54,7 @@ export const gameTemplates: GameTemplate[] = [
     name: 'Crossy Road',
     description: 'Guide your character across a series of busy roads and rivers without getting hit or falling in.',
     image: 'https://placehold.co/600x400.png',
-    dataAiHint: 'pixel chicken',
+    dataAiHint: 'chicken crossing road',
     defaultParams: {
       trafficSpeed: 2,
       logSpeed: 1.5,
