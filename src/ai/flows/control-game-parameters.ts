@@ -1,3 +1,4 @@
+
 // This is an experimental implementation of controlGameParameters, and is not yet functional.
 'use server';
 
@@ -41,7 +42,7 @@ const adjustParametersPrompt = ai.definePrompt({
 
 They have requested the following parameter adjustment: "{{parameterAdjustmentRequest}}".
 
-Here are the current parameters, represented as a JSON object: {{currentParameters}}
+Here are the current parameters, represented as a JSON object: {{{jsonStringify currentParameters}}}
 
 Based on their request, and the current parameters, generate a new set of game parameters that reflects their desired changes.
 
