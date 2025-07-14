@@ -74,7 +74,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
             ctx.font = '20px "Space Grotesk", sans-serif';
             ctx.fillText('Tap or refresh to restart', canvas.width / 2, canvas.height / 2 + 40);
         }
-
+        
         function setupGameLogic() {
             switch (gameType) {
               case 'flappy-bird': {
@@ -88,12 +88,17 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 }
 
                 gameLoop = function() {
-                  if (gameOver) { drawGameOver(); return; }
+                  if (gameOver) { 
+                      drawGameOver();
+                      return;
+                  }
                   ctx.clearRect(0, 0, canvas.width, canvas.height);
                   
                   bird.velocityY += gameParams.gravity;
                   bird.y += bird.velocityY;
-                  if (bird.y + bird.height > canvas.height || bird.y < 0) gameOver = true;
+                  if (bird.y + bird.height > canvas.height || bird.y < 0) {
+                      gameOver = true;
+                  }
 
                   if (mainCharElement.complete && mainCharElement.naturalHeight !== 0) {
                     ctx.drawImage(mainCharElement, bird.x, bird.y, bird.width, bird.height);
@@ -130,7 +135,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 break;
               }
               case 'speed-runner': {
-                let player = { x: 50, y: canvas.height - 60, width: 50, height: 50, velocityY: 0, onGround: true };
+                let player = { x: 50, y: canvas.height - 50, width: 50, height: 50, velocityY: 0, onGround: true };
                 let obstacles = [];
                 let runnerFrame = 0;
 
@@ -171,11 +176,18 @@ export function createHtmlContentForGame(config: GameConfig): string {
 
                     obstacles.forEach((obs, i) => {
                         obs.x -= gameParams.playerSpeed;
+                        const obsY = canvas.height - obs.height;
                         ctx.fillStyle = 'red';
-                        ctx.fillRect(obs.x, canvas.height - obs.height, obs.width, obs.height);
-                        if (player.x < obs.x + obs.width && player.x + player.width > obs.x && player.y + player.height > canvas.height - obs.height) {
+                        ctx.fillRect(obs.x, obsY, obs.width, obs.height);
+                        
+                        // 2D Bounding Box Collision
+                        if (player.x < obs.x + obs.width &&
+                            player.x + player.width > obs.x &&
+                            player.y < obsY + obs.height &&
+                            player.y + player.height > obsY) {
                             gameOver = true;
                         }
+
                         if (obs.x < -obs.width) obstacles.splice(i, 1);
                     });
                     
@@ -549,5 +561,6 @@ export function exportGameAsHtml(htmlContent: string, config: GameConfig) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
 
 
