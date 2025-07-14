@@ -29,13 +29,6 @@ export async function generateGameMusic(input: GenerateGameMusicInput): Promise<
   return generateGameMusicFlow(input);
 }
 
-const musicCompositionPrompt = ai.definePrompt({
-    name: 'musicCompositionPrompt',
-    input: { schema: GenerateGameMusicInputSchema },
-    output: { schema: z.object({ melody: z.string().describe("A melody described using onomatopoeia (e.g., 'doo-dah, dee-dah').") }) },
-    prompt: `You are a music composer. Create a short, simple, and catchy melody as onomatopoeia that fits the theme '{{theme}}'. The melody should last for about {{duration}} seconds. Use repeating patterns. For example, for a 'bouncy' theme, you could write: 'boing, boing, bip, boing'. For a 'spooky' theme: 'whoo-eee, ooo-ooo, whoo-eee'.`
-});
-
 const generateGameMusicFlow = ai.defineFlow(
   {
     name: 'generateGameMusicFlow',
@@ -43,13 +36,9 @@ const generateGameMusicFlow = ai.defineFlow(
     outputSchema: GenerateGameMusicOutputSchema,
   },
   async input => {
-    // Step 1: Generate a melody prompt (onomatopoeia) from a standard text model
-    const { output: compositionOutput } = await musicCompositionPrompt(input);
-    if (!compositionOutput || !compositionOutput.melody) {
-        throw new Error("Failed to compose a melody.");
-    }
+    
+    const musicPrompt = `A ${input.duration}-second piece of instrumental background music with a "${input.theme}" theme.`;
 
-    // Step 2: Use the generated melody with the TTS model
     const { media } = await ai.generate({
       model: 'googleai/gemini-2.5-flash-preview-tts',
       config: {
@@ -60,7 +49,7 @@ const generateGameMusicFlow = ai.defineFlow(
           },
         },
       },
-      prompt: compositionOutput.melody,
+      prompt: musicPrompt,
     });
 
     if (!media) {
