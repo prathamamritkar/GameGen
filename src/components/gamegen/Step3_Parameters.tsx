@@ -63,7 +63,7 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
   useEffect(() => {
     generatePreview();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config.template, config.assets, config.parameters]);
+  }, [config]);
 
 
   const onSubmit = async (data: ParamFormData) => {
