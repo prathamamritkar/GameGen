@@ -299,22 +299,22 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
                     </CardContent>
                 </Card>
                 
-                <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-4 gap-3">
-                    <Button 
-                        type="button" 
-                        variant="outline"
-                        onClick={handleAutofill} 
-                        disabled={isAutofilling || isGenerating} 
-                        className="w-full sm:w-auto sm:min-w-[180px] border-primary text-primary hover:border-accent hover:text-accent-foreground"
-                    >
-                        {isAutofilling ? <LoadingIndicator text="Autofilling..."/> : <><Sparkles className="mr-2 h-4 w-4"/> AI Autofill</>}
-                    </Button>
+                <div className="flex flex-col sm:flex-row sm:justify-start sm:gap-4 gap-3">
                     <Button 
                         type="submit" 
                         disabled={isGenerating || isAutofilling} 
                         className="w-full sm:w-auto sm:min-w-[220px] text-lg py-6 sm:py-2 sm:text-sm"
                     >
                         {isGenerating ? <LoadingIndicator text="Generating..."/> : <>Generate Assets & Music</>}
+                    </Button>
+                    <Button 
+                        type="button" 
+                        variant="outline"
+                        onClick={handleAutofill} 
+                        disabled={isAutofilling || isGenerating} 
+                        className="w-full sm:w-auto sm:min-w-[150px] border-primary text-primary hover:border-accent hover:text-accent-foreground"
+                    >
+                        {isAutofilling ? <LoadingIndicator text="Autofilling..."/> : <><Sparkles className="mr-2 h-4 w-4"/> AI Autofill</>}
                     </Button>
                 </div>
             </form>

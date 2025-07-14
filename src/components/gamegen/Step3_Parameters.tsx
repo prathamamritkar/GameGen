@@ -179,22 +179,22 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
                 />
                 {errors.request && <p className="text-sm text-destructive mt-1">{errors.request.message}</p>}
               </div>
-              <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-4 gap-3">
-                  <Button 
-                      type="button" 
-                      variant="outline"
-                      onClick={handleAutofill} 
-                      disabled={isLoading} 
-                      className="w-full sm:w-auto sm:min-w-[180px] border-primary text-primary hover:border-accent hover:text-accent-foreground"
-                  >
-                      {isAutofilling ? <LoadingIndicator text="Autofilling..."/> : <><Sparkles className="mr-2 h-4 w-4"/> AI Autofill</>}
-                  </Button>
+              <div className="flex flex-col sm:flex-row sm:justify-start sm:gap-4 gap-3">
                   <Button 
                       type="submit" 
                       disabled={isLoading} 
                       className="w-full sm:w-auto sm:min-w-[220px]"
                   >
                       {isGeneratingParams ? <LoadingIndicator text="Adjusting..." /> : 'Generate New Parameters'}
+                  </Button>
+                  <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={handleAutofill} 
+                      disabled={isLoading} 
+                      className="w-full sm:w-auto sm:min-w-[150px] border-primary text-primary hover:border-accent hover:text-accent-foreground"
+                  >
+                      {isAutofilling ? <LoadingIndicator text="Autofilling..."/> : <><Sparkles className="mr-2 h-4 w-4"/> AI Autofill</>}
                   </Button>
               </div>
             </CardContent>
