@@ -84,6 +84,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
 
                 window.jump = function() {
                     if (gameOver) { window.location.reload(); return; }
+                    if (!gameStarted) return;
                     bird.velocityY = gameParams.lift;
                 }
 
@@ -141,6 +142,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
 
                 window.runnerJump = function() {
                     if (gameOver) { window.location.reload(); return; }
+                    if (!gameStarted) return;
                     if (player.onGround) {
                         player.velocityY = -20;
                         player.onGround = false;
@@ -206,6 +208,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 
                 window.whackAt = function(x, y) {
                     if (gameOver) { window.location.reload(); return; }
+                    if (!gameStarted) return;
                     holes.forEach(hole => {
                         if (hole.visible && Math.hypot(x - hole.x, y - (hole.y - 20)) < 35) {
                             score++;
@@ -294,7 +297,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                             grid[r][c] = createGem(r, c);
                         }
                     }
-                    // Prevent matches on spawn
                     if (findMatches().length > 0) createGrid();
                 }
                 
@@ -341,7 +343,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
 
                     score += matches.length * 10;
                     matches.forEach(gem => {
-                        if(grid[gem.r]) grid[gem.r][gem.c] = null;
+                        if(grid[gem.r] && grid[gem.r][gem.c]) grid[gem.r][gem.c] = null;
                     });
                     return true;
                 }
@@ -383,11 +385,14 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     isSwapping = false;
                 }
 
-                window.handleClickOrTap = function(ex, ey) {
-                    if (gameOver || isSwapping) return;
+                window.handleClickOrTap = function(e) {
+                    if (gameOver || isSwapping) { if(gameOver) window.location.reload(); return; }
+                    if (!gameStarted) return;
                     const rect = canvas.getBoundingClientRect();
-                    const c = Math.floor((ex - rect.left - cellSize) / cellSize);
-                    const r = Math.floor((ey - rect.top - cellSize) / cellSize);
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                    const c = Math.floor((clientX - rect.left - cellSize) / cellSize);
+                    const r = Math.floor((clientY - rect.top - cellSize) / cellSize);
 
                     if (r < 0 || r >= gridSize || c < 0 || c >= gridSize) return;
 
@@ -399,7 +404,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                             if (findMatches().length > 0) {
                                 handleMatches();
                             } else {
-                                // Invalid move, swap back
                                 setTimeout(() => {
                                     [grid[selected.r][selected.c], grid[r][c]] = [grid[r][c], grid[selected.r][selected.c]];
                                 }, 200);
@@ -511,6 +515,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
 
                 window.movePlayer = function(dir) {
                     if(gameOver) { window.location.reload(); return; }
+                    if (!gameStarted) return;
                     if(dir === 'up') crossyPlayer.y -= laneHeight;
                     if(dir === 'down') crossyPlayer.y += laneHeight;
                     if(dir === 'left') crossyPlayer.x -= 30;
@@ -567,10 +572,10 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 });
                 window.startTimer();
             } else if (gameType === 'match-3') {
-                canvas.addEventListener('mousedown', (e) => window.handleClickOrTap(e.clientX, e.clientY));
+                canvas.addEventListener('mousedown', (e) => window.handleClickOrTap(e));
                 canvas.addEventListener('touchstart', (e) => {
                     e.preventDefault();
-                    window.handleClickOrTap(e.touches[0].clientX, e.touches[0].clientY);
+                    window.handleClickOrTap(e);
                 });
             } else if (gameType === 'crossy-road') {
                 document.addEventListener('keydown', (e) => {
