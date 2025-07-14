@@ -14,19 +14,19 @@ body {
     --card-foreground: 222 13% 16%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 13% 16%;
-    --primary: 207 100% 43%; /* Electric Blue */
-    --primary-foreground: 0 0% 100%;
+    --primary: 29 100% 67%; /* Soft Tangerine */
+    --primary-foreground: 222 13% 16%;
     --secondary: 220 13% 91%;
     --secondary-foreground: 222 13% 16%;
     --muted: 220 13% 91%;
     --muted-foreground: 222 13% 40%;
-    --accent: 29 100% 67%; /* Soft Tangerine */
-    --accent-foreground: 222 13% 16%;
+    --accent: 147 62% 48%; /* Teal-Mint */
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 220 13% 88%;
     --input: 220 13% 88%;
-    --ring: 207 100% 43%; /* Electric Blue */
+    --ring: 29 100% 67%; /* Soft Tangerine */
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -55,7 +55,7 @@ body {
     --secondary-foreground: 220 60% 97%;
     --muted: 222 13% 25%;
     --muted-foreground: 220 60% 80%;
-    --accent: 29 100% 67%; /* Soft Tangerine */
+    --accent: 152 61% 50%; /* Spring-Green */
     --accent-foreground: 222 13% 16%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
