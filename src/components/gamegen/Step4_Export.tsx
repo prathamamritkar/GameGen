@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,7 @@ export default function Step4Export({ config, onBack, onReset }: Step4Props) {
 
   const generatePreview = () => {
     setIsLoading(true);
-    if (config.template) {
+    if (config.template && config.assets) {
       const content = createHtmlContentForGame(config);
       setHtmlContent(content);
     } else {
