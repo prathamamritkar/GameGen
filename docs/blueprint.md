@@ -1,0 +1,21 @@
+# **App Name**: GameGen
+
+## Core Features:
+
+- Template Selection: Offer a selection of five fully playable classic game templates: Flappy Bird, Speed Runner, Whack-the-Mole, Simple Match-3, and Crossy Road.
+- AI-Powered Reskinning: Enable users to generate new visual assets for the selected game using AI prompts, guiding them with structured options covering story, theme, art style, environment, NPCs, the main character, three-level difficulty settings. Aim for an interactive experience with a processing time of under 1 minute per reskin.
+- AI Game Parameter Control: Allow users to adjust game parameters, like speed, gravity, gaps between objects, frequency of power-ups, either via natural language or through AI-suggested smart settings, dynamically influencing gameplay and game difficulty level using a tool.
+- Intuitive Workflow: Provide a straightforward, step-by-step user interface guiding users from template selection to reskinning to game parameter setting to export.
+- One-Click Export: Provide a one-click export feature that saves the customized ready-to-play HTML5 game as a zipped folder containing an index.html file, allowing offline playability.
+- AI-Generated Music (BGM): Implement a feature to allow users to create or select AI-generated unique background music to add into the selected game using AI tool to modify sounds.
+
+## Style Guidelines:
+
+- Primary: Electric Blue (#0074D9)
+- Background: Pale Gray (#F4F6FB) in light mode
+- Background: Charcoal (#23272F) in dark mode
+- Accent: Soft Tangerine (#FFAA5A)
+- Headline font: 'Space Grotesk' (sans-serif); Body font: 'Inter' (sans-serif).
+- Generate an icon set that mirrors classic arcade aesthetics while following Google’s Material Design grid. Use simple, geometric ‘Sharp’ Material UI SVG icons—a gear or sliders for Settings, a brush, grid, and magic-wand for Customization, and clear arrow-based symbols for Export and sharing actions. Icons should render at 24 dp, maintain consistent stroke weight, and default to charcoal for inactive states, shifting to our Soft Tangerine accent on hover or active. Ensure each icon ships with an accessible text label and is exported as React components from @mui/icons-material for effortless integration into our NextJS codebase. Geometric, Sharp, Pixelated, Retro, Filled, Consistent, Minimalist, Intuitive, Cohesive, Accessible
+- During AI compilation and export tasks, render subtle, retro-inspired micro-animations that align with our Electric-Blue/Tangerine palette. Implement a pixel-style progress bar that emits faint sparkles (CSS transform + opacity) on a 600 ms loop, easing with cubic-bezier(0.2, 0.0, 0.2, 1). In dark mode, tint sparkles Electric Blue; in light mode, switch to Soft Tangerine to maintain 4.5:1 contrast. Upon completion, morph the bar into a check-mark icon using an 800 ms scale-and-fade sequence, ensuring motion continuity. Keep all GPU-accelerated, avoid layout jank, and expose animation parameters as theme variables for easy tweaking in our NextJS codebase. Subtle, Micro, Smooth, Eased, Responsive, Progressive, Feedback, Pixelated, Nostalgic, Accessible
+- Generate a four-step wizard interface that walks users through Template Selection, AI Reskinning, Parameter Setting, and Export. Each step occupies the primary canvas while a breadcrumb stepper in the top bar highlights progress with filled Electric-Blue circles. Provide a collapsible left icon rail for global actions and context-aware right-side panels or bottom drawers for step-specific controls. Use a center card grid for templates, a live split-view preview for reskinning, a slide-up parameter sheet with inline tooltips, and a full-width export summary card. Keep interactive elements at least 16 px, apply our Electric-Blue accent for active states, Soft Tangerine for hover feedback, and maintain AA contrast on both Pale-Gray light and Charcoal dark themes. Implement responsive CSS Grid (12/4/1-column), animate progress bars and icon pulses with CSS transforms under 800 ms, and respect prefers-reduced-motion. Export the layout as fully annotated React components ready for integration into our NextJS codebase. Keep the layout consistent Wizard, Stepwise, Grid, Responsive, Splitview, Drawer, Minimalist, Accessible, Adaptive.

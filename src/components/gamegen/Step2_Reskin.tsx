@@ -1,0 +1,263 @@
+"use client";
+
+import { useState } from 'react';
+import Image from 'next/image';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Slider } from '@/components/ui/slider';
+import { reskinGameAssets } from '@/ai/flows/reskin-game-assets';
+import { generateGameMusic } from '@/ai/flows/generate-game-music';
+import type { GameConfig, ReskinInput, Assets, Music } from '@/lib/types';
+import LoadingIndicator from './LoadingIndicator';
+import { ArrowLeft, ArrowRight, Wand2, Music as MusicIcon } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+interface Step2Props {
+  config: GameConfig;
+  onNext: () => void;
+  onBack: () => void;
+  onUpdateConfig: (config: Partial<GameConfig>) => void;
+}
+
+const reskinSchema = z.object({
+  story: z.string().min(10, 'Please describe the story in a bit more detail.'),
+  theme: z.string().min(3, 'Theme is required.'),
+  artStyle: z.string().min(3, 'Art style is required.'),
+  environment: z.string().min(10, 'Please describe the environment.'),
+  npcs: z.string().min(3, 'Describe the NPCs.'),
+  mainCharacter: z.string().min(3, 'Describe the main character.'),
+  difficultySettings: z.object({
+    easy: z.string().min(3, 'Describe easy difficulty.'),
+    medium: z.string().min(3, 'Describe medium difficulty.'),
+    hard: z.string().min(3, 'Describe hard difficulty.'),
+  }),
+  musicTheme: z.string().min(3, 'Music theme is required.'),
+  musicDuration: z.number().min(5).max(60),
+});
+
+type ReskinFormData = z.infer<typeof reskinSchema>;
+
+export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: Step2Props) {
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [generatedAssets, setGeneratedAssets] = useState<Assets | null>(config.assets || null);
+  const [generatedMusic, setGeneratedMusic] = useState<Music | null>(config.music || null);
+
+  const { register, handleSubmit, control, formState: { errors } } = useForm<ReskinFormData>({
+    resolver: zodResolver(reskinSchema),
+    defaultValues: {
+      story: config.reskinInput?.story || '',
+      theme: config.reskinInput?.theme || '',
+      artStyle: config.reskinInput?.artStyle || 'Pixel Art',
+      environment: config.reskinInput?.environment || '',
+      npcs: config.reskinInput?.npcs || '',
+      mainCharacter: config.reskinInput?.mainCharacter || '',
+      difficultySettings: {
+        easy: config.reskinInput?.difficultySettings.easy || 'Slower speed, fewer obstacles.',
+        medium: config.reskinInput?.difficultySettings.medium || 'Normal speed and obstacles.',
+        hard: config.reskinInput?.difficultySettings.hard || 'Faster speed, many obstacles.',
+      },
+      musicTheme: config.music?.theme || 'Upbeat chiptune',
+      musicDuration: config.music?.duration || 30,
+    },
+  });
+
+  const onSubmit = async (data: ReskinFormData) => {
+    if (!config.template) {
+        toast({ title: "Error", description: "No game template selected.", variant: "destructive" });
+        return;
+    }
+    setIsLoading(true);
+    setGeneratedAssets(null);
+    setGeneratedMusic(null);
+
+    const reskinInput: ReskinInput = {
+      story: data.story,
+      theme: data.theme,
+      artStyle: data.artStyle,
+      environment: data.environment,
+      npcs: data.npcs,
+      mainCharacter: data.mainCharacter,
+      difficultySettings: data.difficultySettings,
+    };
+    onUpdateConfig({ reskinInput });
+
+    try {
+        const [assetsResult, musicResult] = await Promise.all([
+            reskinGameAssets({
+                gameTemplate: config.template.name as any,
+                ...reskinInput,
+            }),
+            generateGameMusic({
+                theme: data.musicTheme,
+                duration: data.musicDuration,
+            })
+        ]);
+        
+        const assets: Assets = {
+            ...assetsResult
+        };
+        const music: Music = {
+            theme: data.musicTheme,
+            duration: data.musicDuration,
+            dataUri: musicResult.musicDataUri,
+        };
+
+        setGeneratedAssets(assets);
+        setGeneratedMusic(music);
+        onUpdateConfig({ assets, music });
+        toast({ title: "Success!", description: "Your game has been customized." });
+
+    } catch (error) {
+        console.error('AI generation failed:', error);
+        toast({ title: "Generation Failed", description: "The AI failed to generate assets. Please try again.", variant: "destructive" });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  return (
+    <section>
+        <div className="text-center">
+            <h2 className="font-headline text-3xl font-bold tracking-tight sm:text-4xl">
+            Customize with AI
+            </h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+            Fill in the details below and let our AI bring your game to life.
+            </p>
+        </div>
+
+        <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                 {/* Reskinning Section */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 font-headline"><Wand2/> Visual Reskinning</CardTitle>
+                        <CardDescription>Describe the look and feel of your game.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {Object.keys(errors).length > 0 && <p className="text-sm text-destructive">Please fill out all required fields.</p>}
+                        
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                           <div>
+                                <Label htmlFor="theme">Theme</Label>
+                                <Input id="theme" {...register('theme')} placeholder="e.g., Sci-Fi, Fantasy, Spooky" />
+                            </div>
+                            <div>
+                                <Label htmlFor="artStyle">Art Style</Label>
+                                <Input id="artStyle" {...register('artStyle')} placeholder="e.g., Pixel Art, Cartoon, Realistic" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <Label htmlFor="story">Story</Label>
+                            <Textarea id="story" {...register('story')} placeholder="A brief story for your game..." />
+                        </div>
+
+                         <div>
+                            <Label htmlFor="mainCharacter">Main Character</Label>
+                            <Input id="mainCharacter" {...register('mainCharacter')} placeholder="e.g., A brave knight, a curious robot" />
+                        </div>
+
+                        <div>
+                            <Label htmlFor="environment">Environment</Label>
+                            <Input id="environment" {...register('environment')} placeholder="e.g., A lush forest, a futuristic city" />
+                        </div>
+                         <div>
+                            <Label htmlFor="npcs">NPCs / Obstacles</Label>
+                            <Input id="npcs" {...register('npcs')} placeholder="e.g., Goombas, ghosts, asteroids" />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Music Section */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 font-headline"><MusicIcon/> Background Music</CardTitle>
+                        <CardDescription>Generate unique background music for your game.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div>
+                            <Label htmlFor="musicTheme">Music Theme</Label>
+                            <Input id="musicTheme" {...register('musicTheme')} placeholder="e.g., Epic orchestral, 8-bit chiptune" />
+                        </div>
+                        <div>
+                            <Label>Duration: <Controller
+                                name="musicDuration"
+                                control={control}
+                                render={({ field }) => <span>{field.value}s</span>}
+                                /></Label>
+                            <Controller
+                                name="musicDuration"
+                                control={control}
+                                render={({ field: { value, onChange } }) => (
+                                    <Slider
+                                    value={[value]}
+                                    onValueChange={(vals) => onChange(vals[0])}
+                                    min={5}
+                                    max={60}
+                                    step={1}
+                                    />
+                                )}
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+                
+                <Button type="submit" disabled={isLoading} className="w-full text-lg py-6">
+                    {isLoading ? <LoadingIndicator text="Generating..."/> : <>Generate Assets & Music</>}
+                </Button>
+            </form>
+
+            {/* Preview Section */}
+            <div className="space-y-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="font-headline">Preview</CardTitle>
+                        <CardDescription>Your generated assets will appear here.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {isLoading && <LoadingIndicator text="AI is creating your world..." />}
+                        {!isLoading && !generatedAssets && (
+                            <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
+                                <Wand2 className="h-12 w-12 mb-4" />
+                                <p>Your generated game assets will be shown here.</p>
+                            </div>
+                        )}
+                        {generatedAssets && (
+                            <div className="space-y-4">
+                                <h3 className="font-bold text-lg">Main Character</h3>
+                                <div className="relative w-full aspect-square rounded-lg overflow-hidden border bg-muted">
+                                    <Image src={generatedAssets.newMainCharacterImage} alt="Generated Main Character" fill className="object-contain" />
+                                </div>
+                                <h3 className="font-bold text-lg">Environment</h3>
+                                 <div className="relative w-full aspect-video rounded-lg overflow-hidden border bg-muted">
+                                    <Image src={generatedAssets.newEnvironmentImage} alt="Generated Environment" fill className="object-cover" />
+                                </div>
+                            </div>
+                        )}
+                        {generatedMusic && (
+                            <div className="mt-4">
+                                <h3 className="font-bold text-lg mb-2">Background Music</h3>
+                                <audio controls src={generatedMusic.dataUri} className="w-full">
+                                    Your browser does not support the audio element.
+                                </audio>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+                 <div className="flex justify-between">
+                    <Button variant="outline" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
+                    <Button onClick={onNext} disabled={!generatedAssets}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
+                </div>
+            </div>
+        </div>
+    </section>
+  );
+}
