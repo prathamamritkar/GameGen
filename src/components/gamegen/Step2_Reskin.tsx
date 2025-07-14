@@ -35,7 +35,7 @@ const reskinSchema = z.object({
   environment: z.string().min(10, 'Please describe the environment.'),
   npcs: z.string().min(3, 'Describe the NPCs.'),
   mainCharacter: z.string().min(3, 'Describe the main character.'),
-  difficultySettings: z.object({
+  difficulty: z.object({
     easy: z.string().min(1, "Easy description is required."),
     medium: z.string().min(1, "Medium description is required."),
     hard: z.string().min(1, "Hard description is required."),
@@ -62,7 +62,7 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
       environment: config.reskinInput?.environment || '',
       npcs: config.reskinInput?.npcs || '',
       mainCharacter: config.reskinInput?.mainCharacter || '',
-      difficultySettings: {
+      difficulty: {
         easy: config.difficulty?.easy || 'Slower speed, fewer obstacles.',
         medium: config.difficulty?.medium || 'Normal speed and obstacles.',
         hard: config.difficulty?.hard || 'Faster speed, many obstacles.',
@@ -90,36 +90,48 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
       mainCharacter: data.mainCharacter,
     };
     
-    const difficulty: Difficulty = data.difficultySettings;
+    const difficulty: Difficulty = data.difficulty;
 
     onUpdateConfig({ reskinInput, difficulty });
 
     try {
-        const [assetsResult, musicResult] = await Promise.all([
-            reskinGameAssets({
-                gameTemplate: config.template.name as any,
-                ...reskinInput,
-                difficulty: difficulty,
-            }),
-            generateGameMusic({
-                theme: data.musicTheme,
-                duration: data.musicDuration,
-            })
-        ]);
-        
-        const assets: Assets = {
-            ...assetsResult
-        };
-        const music: Music = {
+      const assetsPromise = reskinGameAssets({
+        gameTemplate: config.template.name as any,
+        ...reskinInput,
+        difficulty: difficulty,
+      });
+
+      const musicPromise = generateGameMusic({
+        theme: data.musicTheme,
+        duration: data.musicDuration,
+      }).catch(err => {
+        console.error("Music generation failed, proceeding without music.", err);
+        toast({ title: "Music Generation Failed", description: "Could not generate music, but visual assets were created. This may be due to API rate limits.", variant: "destructive" });
+        return null; // Return null if music generation fails
+      });
+
+      const [assetsResult, musicResult] = await Promise.all([assetsPromise, musicPromise]);
+
+      if (!assetsResult) {
+        throw new Error("Asset generation failed.");
+      }
+
+      const assets: Assets = { ...assetsResult };
+      setGeneratedAssets(assets);
+      onUpdateConfig({ assets });
+      
+      let finalMusic: Music | undefined = undefined;
+      if (musicResult) {
+        finalMusic = {
             theme: data.musicTheme,
             duration: data.musicDuration,
             dataUri: musicResult.musicDataUri,
         };
+        setGeneratedMusic(finalMusic);
+      }
+      onUpdateConfig({ music: finalMusic });
 
-        setGeneratedAssets(assets);
-        setGeneratedMusic(music);
-        onUpdateConfig({ assets, music });
-        toast({ title: "Success!", description: "Your game has been customized." });
+      toast({ title: "Success!", description: "Your game has been customized." });
 
     } catch (error) {
         console.error('AI generation failed:', error);
@@ -157,16 +169,16 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
 
         Object.entries(result.filledValues).forEach(([key, value]) => {
             if(value) {
-                setValue(key as keyof ReskinFormData, value, { shouldValidate: true, shouldDirty: true });
+                setValue(key as any, value, { shouldValidate: true, shouldDirty: true });
                 if (!firstFilledField) {
-                    firstFilledField = key as keyof ReskinFormData;
+                    firstFilledField = key as any;
                 }
                 filledCount++;
             }
         });
 
         if (firstFilledField) {
-            setFocus(firstFilledField);
+            setFocus(firstFilledField as any);
         }
 
         if (filledCount > 0) {
@@ -175,7 +187,7 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
                 description: (
                     <Button variant="link" className="p-0 h-auto" onClick={() => {
                         Object.entries(previousValues).forEach(([key, value]) => {
-                            setValue(key as keyof ReskinFormData, value, { shouldValidate: true });
+                            setValue(key as any, value, { shouldValidate: true });
                         });
                         dismiss(id);
                         toast({ title: "Undo successful", description: "Your previous values have been restored." });
@@ -253,15 +265,15 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
                             <h4 className="font-medium text-sm">Difficulty Descriptions</h4>
                             <div>
                                 <Label htmlFor="difficultyEasy">Easy</Label>
-                                <Input id="difficultyEasy" {...register('difficultySettings.easy')} />
+                                <Input id="difficultyEasy" {...register('difficulty.easy')} />
                             </div>
                              <div>
                                 <Label htmlFor="difficultyMedium">Medium</Label>
-                                <Input id="difficultyMedium" {...register('difficultySettings.medium')} />
+                                <Input id="difficultyMedium" {...register('difficulty.medium')} />
                             </div>
                              <div>
                                 <Label htmlFor="difficultyHard">Hard</Label>
-                                <Input id="difficultyHard" {...register('difficultySettings.hard')} />
+                                <Input id="difficultyHard" {...register('difficulty.hard')} />
                             </div>
                         </div>
 
