@@ -110,7 +110,7 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
         duration: data.musicDuration,
       }).catch(err => {
         console.error("Music generation failed, proceeding without music.", err);
-        toast({ title: "Music Generation Failed", description: "Could not generate music, but visual assets were created. This may be due to API rate limits.", variant: "destructive" });
+        toast({ title: "Music Generation Failed", description: "Rate limit hit for audio generation. Visuals were created, but music was skipped.", variant: "destructive" });
         return null; // Return null if music generation fails
       });
 
