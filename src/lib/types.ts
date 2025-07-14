@@ -9,6 +9,12 @@ export type GameTemplate = {
   defaultParams: Record<string, any>;
 };
 
+export type Difficulty = {
+  easy: string;
+  medium: string;
+  hard: string;
+};
+
 export type ReskinInput = {
   story: string;
   theme: string;
@@ -16,11 +22,6 @@ export type ReskinInput = {
   environment: string;
   npcs: string;
   mainCharacter: string;
-  difficultySettings: {
-    easy: string;
-    medium: string;
-    hard: string;
-  };
 };
 
 export type Assets = {
@@ -46,6 +47,7 @@ export type Parameters = {
 export type GameConfig = {
   template?: GameTemplate;
   reskinInput?: ReskinInput;
+  difficulty?: Difficulty;
   assets?: Assets;
   music?: Music;
   parameters?: Parameters;

@@ -236,5 +236,3 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
     </section>
   );
 }
-
-    

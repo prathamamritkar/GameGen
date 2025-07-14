@@ -15,7 +15,7 @@ import { Slider } from '@/components/ui/slider';
 import { reskinGameAssets } from '@/ai/flows/reskin-game-assets';
 import { generateGameMusic } from '@/ai/flows/generate-game-music';
 import { autofillReskinBlanks } from '@/ai/flows/autofill-reskin-blanks';
-import type { GameConfig, ReskinInput, Assets, Music } from '@/lib/types';
+import type { GameConfig, ReskinInput, Assets, Music, Difficulty } from '@/lib/types';
 import LoadingIndicator from './LoadingIndicator';
 import { ArrowLeft, ArrowRight, Wand2, Music as MusicIcon, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -63,9 +63,9 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
       npcs: config.reskinInput?.npcs || '',
       mainCharacter: config.reskinInput?.mainCharacter || '',
       difficultySettings: {
-        easy: config.reskinInput?.difficultySettings?.easy || 'Slower speed, fewer obstacles.',
-        medium: config.reskinInput?.difficultySettings?.medium || 'Normal speed and obstacles.',
-        hard: config.reskinInput?.difficultySettings?.hard || 'Faster speed, many obstacles.',
+        easy: config.difficulty?.easy || 'Slower speed, fewer obstacles.',
+        medium: config.difficulty?.medium || 'Normal speed and obstacles.',
+        hard: config.difficulty?.hard || 'Faster speed, many obstacles.',
       },
       musicTheme: config.music?.theme || '',
       musicDuration: config.music?.duration || 30,
@@ -88,19 +88,18 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
       environment: data.environment,
       npcs: data.npcs,
       mainCharacter: data.mainCharacter,
-      difficultySettings: {
-          easy: data.difficultySettings.easy,
-          medium: data.difficultySettings.medium,
-          hard: data.difficultySettings.hard,
-      },
     };
-    onUpdateConfig({ reskinInput });
+    
+    const difficulty: Difficulty = data.difficultySettings;
+
+    onUpdateConfig({ reskinInput, difficulty });
 
     try {
         const [assetsResult, musicResult] = await Promise.all([
             reskinGameAssets({
                 gameTemplate: config.template.name as any,
                 ...reskinInput,
+                difficulty: difficulty,
             }),
             generateGameMusic({
                 theme: data.musicTheme,
@@ -381,5 +380,3 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
     </section>
   );
 }
-
-    

@@ -18,7 +18,7 @@ const ReskinGameAssetsInputSchema = z.object({
   environment: z.string().describe('The environment of the reskinned game.'),
   npcs: z.string().describe('The description of the NPCs in the reskinned game.'),
   mainCharacter: z.string().describe('The description of the main character in the reskinned game.'),
-  difficultySettings: z.object({
+  difficulty: z.object({
     easy: z.string().describe('The description of the easy difficulty setting.'),
     medium: z.string().describe('The description of the medium difficulty setting.'),
     hard: z.string().describe('The description of the hard difficulty setting.'),
@@ -55,7 +55,7 @@ Art Style: {{{artStyle}}}
 Environment: {{{environment}}}
 NPCs: {{{npcs}}}
 Main Character: {{{mainCharacter}}}
-Difficulty Settings: Easy: {{{difficultySettings.easy}}}, Medium: {{{difficultySettings.medium}}}, Hard: {{{difficultySettings.hard}}}
+Difficulty Settings: Easy: {{{difficulty.easy}}}, Medium: {{{difficulty.medium}}}, Hard: {{{difficulty.hard}}}
 
 Based on the above information, please provide a detailed description of all the new visual assets for the reskinned game.`,
   config: {
