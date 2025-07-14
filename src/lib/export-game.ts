@@ -17,6 +17,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const mainCharElement = document.getElementById('main-char');
+    const bgm = document.getElementById('bgm');
     let gameParams = JSON.parse(document.getElementById('game-params')?.textContent || '{}');
     const gameType = document.getElementById('game-type').textContent;
 
@@ -32,6 +33,14 @@ export function createHtmlContentForGame(config: GameConfig): string {
 
     let score = 0;
     let gameOver = false;
+    let musicStarted = false;
+
+    function startMusic() {
+        if (bgm && !musicStarted) {
+            bgm.play().catch(e => console.log("Audio play failed:", e));
+            musicStarted = true;
+        }
+    }
 
     function drawTitle() {
       ctx.fillStyle = 'white';
@@ -68,7 +77,8 @@ export function createHtmlContentForGame(config: GameConfig): string {
         let frameCount = 0;
 
         function jump() {
-            if (gameOver) { window.location.reload(); }
+            startMusic();
+            if (gameOver) { window.location.reload(); return; }
             bird.velocityY = gameParams.lift;
         }
 
@@ -95,7 +105,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
           
           pipes.forEach((p, i) => {
             p.x -= gameParams.pipeSpeed;
-            ctx.fillStyle = '#73BF2E';
+            ctx.fillStyle = '#22C55E';
             ctx.fillRect(p.x, 0, 80, p.y);
             ctx.fillRect(p.x, p.y + gameParams.pipeGap, 80, canvas.height - p.y - gameParams.pipeGap);
 
@@ -124,7 +134,8 @@ export function createHtmlContentForGame(config: GameConfig): string {
         let runnerFrame = 0;
 
         function runnerJump() {
-            if (gameOver) { window.location.reload(); }
+            startMusic();
+            if (gameOver) { window.location.reload(); return; }
             if (player.onGround) {
                 player.velocityY = -20;
                 player.onGround = false;
@@ -187,7 +198,8 @@ export function createHtmlContentForGame(config: GameConfig): string {
         let timeLeft = gameParams.gameDuration;
         
         function whackAt(x, y) {
-            if (gameOver) { window.location.reload(); }
+            startMusic();
+            if (gameOver) { window.location.reload(); return; }
             holes.forEach(hole => {
                 if (hole.visible && Math.hypot(x - hole.x, y - (hole.y - 20)) < 35) {
                     score++;
@@ -295,7 +307,8 @@ export function createHtmlContentForGame(config: GameConfig): string {
         function findMatches() { /* Complex logic omitted for brevity */ }
         
         function handleClickOrTap(x, y) {
-             if (gameOver) { window.location.reload(); }
+            startMusic();
+            if (gameOver) { window.location.reload(); return; }
             const rect = canvas.getBoundingClientRect();
             const c = Math.floor((x - rect.left - cellSize) / cellSize);
             const r = Math.floor((y - rect.top - cellSize) / cellSize);
@@ -393,6 +406,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
         }
 
         function movePlayer(dir) {
+            startMusic();
             if(gameOver) { window.location.reload(); return; }
             if(dir === 'up') crossyPlayer.y -= laneHeight;
             if(dir === 'down') crossyPlayer.y += laneHeight;
@@ -451,17 +465,14 @@ export function createHtmlContentForGame(config: GameConfig): string {
         };
     }
 
-
     function startGame() {
-      document.getElementById('bgm')?.play().catch(e => console.log("Audio play failed:", e));
-      gameLoop();
+      if (gameLoop) {
+        gameLoop();
+      }
     };
-
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        setTimeout(startGame, 1);
-    } else {
-        document.addEventListener('DOMContentLoaded', startGame);
-    }
+    
+    // Using requestAnimationFrame to ensure the canvas is ready for drawing
+    requestAnimationFrame(startGame);
   `;
 
   return `
@@ -513,5 +524,3 @@ export function exportGameAsHtml(htmlContent: string, config: GameConfig) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-
-    
