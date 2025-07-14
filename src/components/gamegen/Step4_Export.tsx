@@ -1,7 +1,6 @@
 "use client";
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { GameConfig } from '@/lib/types';
 import { ArrowLeft, Download, RefreshCw } from 'lucide-react';
 import { exportGameAsHtml, createHtmlContentForGame } from '@/lib/export-game';
@@ -18,7 +17,7 @@ export default function Step4Export({ config, onBack, onReset }: Step4Props) {
   const [htmlContent, setHtmlContent] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  const generatePreview = () => {
     setIsLoading(true);
     if (config.template) {
       const content = createHtmlContentForGame(config);
@@ -27,7 +26,12 @@ export default function Step4Export({ config, onBack, onReset }: Step4Props) {
       setHtmlContent(null);
     }
     // Simulate build time
-    setTimeout(() => setIsLoading(false), 500); 
+    setTimeout(() => setIsLoading(false), 500);
+  };
+
+  useEffect(() => {
+    generatePreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config]);
 
 
@@ -43,21 +47,14 @@ export default function Step4Export({ config, onBack, onReset }: Step4Props) {
         Your Game Is Ready!
       </h2>
       <p className="mt-4 text-lg text-muted-foreground">
-        Preview your game below, or download it and play it anywhere, anytime.
+        Preview your final game below, or download it and play it anywhere, anytime.
       </p>
 
       <div className="mt-8 mb-6">
         <GamePreview 
             htmlContent={htmlContent} 
             isLoading={isLoading}
-            onRebuild={() => { /* This could trigger a re-generation step if needed */
-                setIsLoading(true);
-                 if (config.template) {
-                    const content = createHtmlContentForGame(config);
-                    setHtmlContent(content);
-                }
-                setTimeout(() => setIsLoading(false), 500);
-            }}
+            onRebuild={generatePreview}
         />
       </div>
       

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -14,6 +14,8 @@ import type { GameConfig, Parameters } from '@/lib/types';
 import LoadingIndicator from './LoadingIndicator';
 import { ArrowLeft, ArrowRight, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import GamePreview from './GamePreview';
+import { createHtmlContentForGame } from '@/lib/export-game';
 
 interface Step3Props {
   config: GameConfig;
@@ -30,9 +32,12 @@ type ParamFormData = z.infer<typeof paramSchema>;
 
 export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig }: Step3Props) {
   const { toast, dismiss } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isGeneratingParams, setIsGeneratingParams] = useState(false);
   const [isAutofilling, setIsAutofilling] = useState(false);
   
+  const [htmlContent, setHtmlContent] = useState<string | null>(null);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(true);
+
   const currentParams = config.parameters?.adjusted || config.template?.defaultParams;
 
   const { register, handleSubmit, formState: { errors }, getValues, setValue, setFocus } = useForm<ParamFormData>({
@@ -42,12 +47,30 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
     },
   });
 
+  const generatePreview = () => {
+    setIsPreviewLoading(true);
+    if (config.template && config.assets) {
+      const content = createHtmlContentForGame(config);
+      setHtmlContent(content);
+    } else {
+      setHtmlContent(null);
+    }
+    // Simulate build time
+    setTimeout(() => setIsPreviewLoading(false), 500); 
+  };
+  
+  useEffect(() => {
+    generatePreview();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.template, config.assets, config.parameters]);
+
+
   const onSubmit = async (data: ParamFormData) => {
     if (!config.template) {
         toast({ title: "Error", description: "No game template selected.", variant: "destructive" });
         return;
     }
-    setIsLoading(true);
+    setIsGeneratingParams(true);
 
     try {
         const result = await controlGameParameters({
@@ -58,7 +81,8 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
 
         const newParameters: Parameters = {
             request: data.request,
-            ...result
+            adjusted: result.adjustedParameters,
+            explanation: result.explanation
         };
         onUpdateConfig({ parameters: newParameters });
         toast({ title: "Success!", description: "Game parameters have been adjusted." });
@@ -67,7 +91,7 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
         console.error('AI parameter control failed:', error);
         toast({ title: "Adjustment Failed", description: "The AI failed to adjust parameters. Please try a different request.", variant: "destructive" });
     } finally {
-        setIsLoading(false);
+        setIsGeneratingParams(false);
     }
   };
 
@@ -113,15 +137,25 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
     }
   };
 
+  const isLoading = isGeneratingParams || isAutofilling;
+
   return (
     <section>
       <div className="text-center">
         <h2 className="font-headline text-3xl font-bold tracking-tight sm:text-4xl">
-          Control Game Parameters
+          Set Parameters & Preview
         </h2>
         <p className="mt-4 text-lg text-muted-foreground">
-          Describe how you want to change the gameplay in plain English.
+          Describe how you want to change the gameplay, and see your changes live in the preview.
         </p>
+      </div>
+      
+      <div className="mt-8 mb-6">
+        <GamePreview 
+            htmlContent={htmlContent} 
+            isLoading={isPreviewLoading}
+            onRebuild={generatePreview}
+        />
       </div>
 
       <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
@@ -149,17 +183,17 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
                       type="button" 
                       variant="outline"
                       onClick={handleAutofill} 
-                      disabled={isAutofilling || isLoading} 
+                      disabled={isLoading} 
                       className="w-full sm:w-auto sm:min-w-[220px] border-primary text-primary hover:border-accent hover:text-accent-foreground"
                   >
                       {isAutofilling ? <LoadingIndicator text="Autofilling..."/> : <><Sparkles className="mr-2 h-4 w-4"/> AI Autofill Blanks</>}
                   </Button>
                   <Button 
                       type="submit" 
-                      disabled={isLoading || isAutofilling} 
+                      disabled={isLoading} 
                       className="w-full sm:w-auto sm:min-w-[220px]"
                   >
-                      {isLoading ? <LoadingIndicator text="Adjusting..." /> : 'Generate New Parameters'}
+                      {isGeneratingParams ? <LoadingIndicator text="Adjusting..." /> : 'Generate New Parameters'}
                   </Button>
               </div>
             </CardContent>
@@ -173,12 +207,12 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
                     <CardDescription>Review the AI-adjusted game parameters.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {isLoading && <LoadingIndicator text="AI is tuning your game..." />}
-                    {!isLoading && (
+                    {isGeneratingParams && <LoadingIndicator text="AI is tuning your game..." />}
+                    {!isGeneratingParams && (
                         <div className="space-y-4">
                              <div>
                                 <h3 className="font-bold">Current Parameters:</h3>
-                                <pre className="mt-2 w-full rounded-md bg-muted p-4 text-sm">
+                                <pre className="mt-2 w-full rounded-md bg-muted p-4 text-sm max-h-60 overflow-auto">
                                     <code>{JSON.stringify(currentParams, null, 2)}</code>
                                 </pre>
                             </div>
@@ -192,12 +226,11 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
                     )}
                 </CardContent>
             </Card>
-
-            <div className="flex justify-between">
-                <Button variant="outline" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
-                <Button onClick={onNext}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
-            </div>
         </div>
+      </div>
+       <div className="mt-12 flex justify-between">
+          <Button variant="outline" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
+          <Button onClick={onNext}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
       </div>
     </section>
   );
