@@ -1,4 +1,5 @@
 import { GameGenWizard } from '@/components/gamegen/GameGenWizard';
+import { ThemeToggleButton } from '@/components/ui/ThemeToggleButton';
 import { Gamepad2 } from 'lucide-react';
 
 export default function Home() {
@@ -12,6 +13,9 @@ export default function Home() {
               GameGen
             </span>
           </a>
+          <div className="ml-auto">
+            <ThemeToggleButton />
+          </div>
         </div>
       </header>
       <main className="flex-1">
