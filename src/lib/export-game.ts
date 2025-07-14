@@ -10,13 +10,26 @@ export function createHtmlContentForGame(config: GameConfig): string {
   const mainCharImg = config.assets?.newMainCharacterImage || '';
   const environmentImg = config.assets?.newEnvironmentImage || 'https://placehold.co/800x600.png';
   const musicSrc = config.music?.dataUri || '';
+  const gameType = config.template?.id || 'flappy-bird';
 
   const gameLogic = `
     const canvas = document.getElementById('game-canvas');
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const mainCharElement = document.getElementById('main-char');
-    const gameParams = JSON.parse(document.getElementById('game-params')?.textContent || '{}');
+    let gameParams = JSON.parse(document.getElementById('game-params')?.textContent || '{}');
+    const gameType = document.getElementById('game-type').textContent;
+
+    // Merge with defaults to ensure all keys are present
+    const defaultParams = {
+        'flappy-bird': { gravity: 0.6, lift: -10, pipeGap: 200, pipeSpeed: 5 },
+        'speed-runner': { playerSpeed: 10, obstacleFrequency: 0.02, powerUpFrequency: 0.01 },
+        'whack-a-mole': { moleVisibleTime: 800, gameDuration: 30 },
+        'match-3': { gridSize: 8, numColors: 6, timeLimit: 60 },
+        'crossy-road': { trafficSpeed: 2, logSpeed: 1.5, lanes: 10 }
+    };
+    gameParams = { ...defaultParams[gameType], ...gameParams };
+
     let score = 0;
     let gameOver = false;
 
@@ -48,7 +61,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
     let gameLoop;
     
     // --- Game Logic Switch ---
-    switch (gameParams.gameType) {
+    switch (gameType) {
       case 'flappy-bird':
         let bird = { x: 50, y: canvas.height / 2, width: 50, height: 50, velocityY: 0 };
         let pipes = [];
@@ -126,7 +139,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
               ctx.fillRect(player.x, player.y, player.width, player.height);
             }
 
-            if(runnerFrame % Math.floor(1 / gameParams.obstacleFrequency) === 0) {
+            if(runnerFrame % Math.floor(100 / gameParams.playerSpeed / (gameParams.obstacleFrequency * 100)) === 0) {
                 obstacles.push({x: canvas.width, width: 30, height: 30});
             }
 
@@ -378,10 +391,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
 
 
     function startGame() {
-      // Add gameType to params so the switch statement works
-      if (config.template?.id) {
-          gameParams.gameType = config.template.id;
-      }
       document.getElementById('bgm')?.play().catch(e => console.log("Audio play failed:", e));
       gameLoop();
     };
@@ -417,11 +426,8 @@ export function createHtmlContentForGame(config: GameConfig): string {
       </div>
       <img id="main-char" src="${mainCharImg}" />
       ${musicSrc ? `<audio id="bgm" src="${musicSrc}" loop></audio>` : ''}
+      <div id="game-type" style="display: none;">${gameType}</div>
       <script id="game-params" type="application/json">${params}</script>
-      <script>
-        // Pass config from template to script
-        const config = ${JSON.stringify({template: {id: config.template?.id}})}
-      </script>
       <script>${gameLogic}</script>
     </body>
     </html>
