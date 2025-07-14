@@ -29,13 +29,6 @@ export async function generateGameMusic(input: GenerateGameMusicInput): Promise<
   return generateGameMusicFlow(input);
 }
 
-const generateGameMusicPrompt = ai.definePrompt({
-  name: 'generateGameMusicPrompt',
-  input: {schema: GenerateGameMusicInputSchema},
-  prompt: `Generate background music with the following theme: {{{theme}}}. The duration should be approximately {{{duration}}} seconds. Output should be PCM audio data encoded as base64 in data URI format.`, // Removed output schema
-});
-
-
 const generateGameMusicFlow = ai.defineFlow(
   {
     name: 'generateGameMusicFlow',
@@ -53,7 +46,7 @@ const generateGameMusicFlow = ai.defineFlow(
           },
         },
       },
-      prompt: `Generate background music with the following theme: ${input.theme}. The duration should be approximately ${input.duration} seconds.`,
+      prompt: `Generate an instrumental background music track with the following theme: ${input.theme}. The duration should be approximately ${input.duration} seconds.`,
     });
     if (!media) {
       throw new Error('no media returned');
