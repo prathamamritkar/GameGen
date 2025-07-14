@@ -167,46 +167,47 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
       <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
         <div className="flex flex-col gap-8">
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <Card>
-                <CardHeader>
-                <CardTitle className="font-headline flex items-center gap-2"><SlidersHorizontal /> Adjust Gameplay</CardTitle>
-                <CardDescription>
-                    Examples: "make the game faster and more challenging", "add more power-ups", "lower the gravity".
-                </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                <div>
-                    <Label htmlFor="request">How should the game change?</Label>
-                    <Textarea
-                    id="request"
-                    {...register('request')}
-                    placeholder="e.g., Make the game easier for a beginner..."
-                    rows={5}
-                    />
-                    {errors.request && <p className="text-sm text-destructive mt-1">{errors.request.message}</p>}
-                </div>
-                <div className="flex w-full gap-4">
-                    <Button 
-                        type="submit" 
-                        disabled={isLoading} 
-                        className="w-3/4"
-                    >
-                        {isGeneratingParams ? <LoadingIndicator text="Adjusting..." /> : 'Generate New Parameters'}
-                    </Button>
-                    <Button 
-                        type="button" 
-                        variant="outline"
-                        onClick={handleAutofill} 
-                        disabled={isLoading} 
-                        className="w-1/4 border-primary text-primary hover:border-accent hover:text-accent-foreground"
-                    >
-                        {isAutofilling ? <LoadingIndicator text="Autofilling..."/> : <><Sparkles className="mr-2 h-4 w-4"/>AI Autofill</>}
-                    </Button>
-                </div>
-                </CardContent>
-            </Card>
+                <Card>
+                    <CardHeader>
+                    <CardTitle className="font-headline flex items-center gap-2"><SlidersHorizontal /> Adjust Gameplay</CardTitle>
+                    <CardDescription>
+                        Examples: "make the game faster and more challenging", "add more power-ups", "lower the gravity".
+                    </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                    <div>
+                        <Label htmlFor="request">How should the game change?</Label>
+                        <Textarea
+                        id="request"
+                        {...register('request')}
+                        placeholder="e.g., Make the game easier for a beginner..."
+                        rows={5}
+                        />
+                        {errors.request && <p className="text-sm text-destructive mt-1">{errors.request.message}</p>}
+                    </div>
+                    <div className="flex w-full gap-4">
+                        <Button 
+                            type="submit" 
+                            disabled={isLoading} 
+                            className="w-3/4"
+                        >
+                            {isGeneratingParams ? <LoadingIndicator text="Adjusting..." /> : 'Generate New Parameters'}
+                        </Button>
+                        <Button 
+                            type="button" 
+                            variant="outline"
+                            onClick={handleAutofill} 
+                            disabled={isLoading} 
+                            className="w-1/4 border-primary text-primary hover:border-accent hover:text-accent-foreground"
+                        >
+                            {isAutofilling ? <LoadingIndicator text="Autofilling..."/> : <><Sparkles className="mr-2 h-4 w-4"/>AI Autofill</>}
+                        </Button>
+                    </div>
+                    </CardContent>
+                </Card>
             </form>
-
+        </div>
+        <div className="flex flex-col gap-8">
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline">Game Parameters</CardTitle>
@@ -233,9 +234,6 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
                 </CardContent>
             </Card>
         </div>
-        <div>
-             {/* This space is intentionally left for the preview which is now at the bottom */}
-        </div>
       </div>
 
        <div className="mt-12 mb-6">
@@ -253,5 +251,3 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
     </section>
   );
 }
-
-    
