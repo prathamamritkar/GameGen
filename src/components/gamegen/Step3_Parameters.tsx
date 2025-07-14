@@ -50,12 +50,10 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
 
   const generatePreview = () => {
     setIsPreviewLoading(true);
-    // Only generate preview if assets are available to prevent errors
-    if (config.template && config.assets) {
+    // Only generate preview if template is available
+    if (config.template) {
         const content = createHtmlContentForGame(config);
         setHtmlContent(content);
-    } else {
-        setHtmlContent(createHtmlContentForGame(config));
     }
     // Simulate build time
     setTimeout(() => setIsPreviewLoading(false), 500); 
@@ -135,7 +133,12 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
         console.error('AI parameter autofill failed:', error);
         const errorMessage = (error.message || '').toLowerCase();
         if (errorMessage.includes('429') || errorMessage.includes('quota')) {
-          toast({ title: "Autofill Rate Limit Hit", description: "You've exceeded the daily quota for AI suggestions.", variant: "destructive" });
+          toast({ title: "AI Quota Reached", description: "Used a fallback suggestion instead.", variant: "destructive" });
+          if (!getValues('request')) {
+              const fallbackRequest = "Make the game much faster and increase the number of obstacles, but also add more power-ups as a reward.";
+              setValue('request', fallbackRequest, { shouldValidate: true, shouldDirty: true });
+              setFocus('request');
+          }
         } else {
           toast({ title: "Autofill Failed", description: "The AI failed to generate a suggestion. Please try again.", variant: "destructive" });
         }

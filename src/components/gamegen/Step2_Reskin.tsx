@@ -46,6 +46,16 @@ const reskinSchema = z.object({
 
 type ReskinFormData = z.infer<typeof reskinSchema>;
 
+const fallbackValues = {
+  story: "A brave astronaut kitten explores a galaxy made of yarn and chases a cosmic mouse.",
+  theme: "Cosmic Kitten Adventure",
+  artStyle: "Retro Cartoon",
+  environment: "A vibrant nebula with planets that look like balls of yarn and asteroid fields of catnip.",
+  npcs: "Grumpy space dogs in flying saucers and swirling black holes that steal your yarn.",
+  mainCharacter: "A small kitten in a fishbowl space helmet, riding a tiny rocket.",
+  musicTheme: "Upbeat and whimsical synth-pop",
+};
+
 export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: Step2Props) {
   const { toast, dismiss } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -212,7 +222,21 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
         console.error('AI autofill failed:', error);
         const errorMessage = (error.message || '').toLowerCase();
         if (errorMessage.includes('429') || errorMessage.includes('quota')) {
-          toast({ title: "Autofill Rate Limit Hit", description: "You've exceeded the daily quota for AI suggestions.", variant: "destructive" });
+          toast({ title: "AI Quota Reached", description: "Used fallback values instead.", variant: "destructive" });
+          const currentFormValues = getValues();
+          let firstFilledField: keyof typeof fallbackValues | null = null;
+          (Object.keys(fallbackValues) as Array<keyof typeof fallbackValues>).forEach(key => {
+            if (!currentFormValues[key]) {
+              setValue(key, fallbackValues[key], { shouldValidate: true, shouldDirty: true });
+              if (!firstFilledField) {
+                  firstFilledField = key;
+              }
+            }
+          });
+          if (firstFilledField) {
+              setFocus(firstFilledField);
+          }
+
         } else {
           toast({ title: "Autofill Failed", description: "The AI failed to generate suggestions. Please try again.", variant: "destructive" });
         }
