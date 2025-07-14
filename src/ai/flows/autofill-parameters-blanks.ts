@@ -29,19 +29,22 @@ const autofillPrompt = ai.definePrompt({
   name: 'autofillParametersPrompt',
   input: { schema: AutofillInputSchema },
   output: { schema: AutofillOutputSchema },
-  prompt: `You are a creative assistant for a game generation app.
-The user is adjusting parameters for a "{{gameTemplate}}" game and wants help creating a request.
-The current request is: "{{currentRequest}}".
+  prompt: `You are a creative assistant for a game generation app. The user is adjusting gameplay parameters for a "{{gameTemplate}}" game and wants a creative suggestion for how to change it.
 
-Your task is to generate a creative and descriptive request ONLY if the current request is empty.
-If it already has text, return an empty string for the 'filledRequest' field.
+The user's current request is: "{{currentRequest}}".
 
-Example creative requests:
-- "Make the player twice as fast but add way more obstacles."
-- "I want a really easy, slow-paced version for a beginner."
-- "Increase the difficulty by making enemies appear more often and reducing the time limit."
+Your ONLY task is to generate a single, creative, natural language request to adjust the game's mechanics ONLY if the current request is empty.
+If the request field already has text, you MUST return an empty string for the 'filledRequest' field.
 
-Based on the game template, provide one creative request.
+Focus on gameplay aspects like speed, difficulty, gravity, frequency of items, etc.
+
+Here are some examples of good, creative requests:
+- "Make the player character twice as fast, but also add way more obstacles to dodge."
+- "I'd like a really easy, slow-paced version suitable for a total beginner."
+- "Let's increase the difficulty by making enemies appear more often and reducing the overall time limit."
+- "Can you lower the gravity and make the jump height much higher?"
+
+Based on the "{{gameTemplate}}" game, provide one creative request for the 'filledRequest' field.
 `,
 });
 
