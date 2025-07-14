@@ -81,6 +81,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
             
             canvas.addEventListener('click', handleRestart, { once: true });
             canvas.addEventListener('touchstart', handleRestart, { once: true });
+            document.addEventListener('keydown', handleRestart, { once: true });
         }
         
         function setupGameLogic() {
@@ -138,9 +139,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                   });
                   
                   drawScore();
-                  if (!gameOver) {
-                    requestAnimationFrame(gameLoop);
-                  }
+                  requestAnimationFrame(gameLoop);
                 }
                 break;
               }
@@ -201,9 +200,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     });
                     
                     drawScore();
-                    if (!gameOver) {
-                      requestAnimationFrame(gameLoop);
-                    }
+                    requestAnimationFrame(gameLoop);
                 }
                 break;
               }
@@ -215,8 +212,8 @@ export function createHtmlContentForGame(config: GameConfig): string {
                             x: 150 + j * 200, 
                             y: 100 + i * 150, 
                             visible: false, 
-                            hideTimer: 0, // Time until it hides
-                            spawnTimer: Math.random() * 2000 + 500 // Time until it appears
+                            hideTimer: 0,
+                            spawnTimer: Math.random() * 2000 + 500
                         });
                     }
                 }
@@ -293,9 +290,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     ctx.fillText('Time: ' + Math.ceil(timeLeft), canvas.width - 10, 30);
                     
                     drawScore();
-                    if (!gameOver) {
-                        requestAnimationFrame(gameLoop);
-                    }
+                    requestAnimationFrame(gameLoop);
                 }
                 break;
               }
@@ -433,6 +428,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                                 if (findMatches().length > 0) {
                                     await handleMatches();
                                 } else {
+                                    // swap back
                                     [grid[selected.r][selected.c], grid[r][c]] = [grid[r][c], grid[selected.r][selected.c]];
                                     grid[selected.r][selected.c].r = selected.r;
                                     grid[selected.r][selected.c].c = selected.c;
@@ -474,6 +470,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 
                 gameLoop = function() {
                     if(gameOver) { 
+                        drawGameOver();
                         return;
                     }
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -483,12 +480,11 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     ctx.fillRect(0, canvas.height - laneHeight, canvas.width, laneHeight);
 
                     let onLog = false;
-                    let currentLaneIndex = -1;
                     const playerLaneY = crossyPlayer.y + crossyPlayer.height / 2;
+                    let currentLaneIndex = -1;
                     if (playerLaneY > laneHeight && playerLaneY < canvas.height - laneHeight) {
                         currentLaneIndex = Math.floor((playerLaneY - laneHeight) / laneHeight);
                     }
-
 
                     lanes.forEach((lane, index) => {
                         ctx.fillStyle = lane.type === 'traffic' ? '#555' : '#1E90FF';
@@ -504,31 +500,40 @@ export function createHtmlContentForGame(config: GameConfig): string {
 
                         lane.items.forEach((item, itemIndex) => {
                             item.x += lane.speed;
+                            const itemY = lane.y + laneHeight / 2 - 15;
+                            const itemHeight = 30;
 
                             if((lane.speed > 0 && item.x > canvas.width) || (lane.speed < 0 && item.x < -item.width)) {
                                 lane.items.splice(itemIndex, 1);
                             }
                             
                             ctx.fillStyle = lane.type === 'traffic' ? 'yellow' : '#8B4513';
-                            ctx.fillRect(item.x, lane.y + laneHeight / 2 - 15, item.width, 30);
+                            ctx.fillRect(item.x, itemY, item.width, itemHeight);
                             
-                             if (currentLaneIndex === index && crossyPlayer.x < item.x + item.width && crossyPlayer.x + crossyPlayer.width > item.x) {
-                                if (lane.type === 'traffic') gameOver = true;
-                                if (lane.type === 'log') onLog = true;
+                            if (crossyPlayer.x < item.x + item.width &&
+                                crossyPlayer.x + crossyPlayer.width > item.x &&
+                                crossyPlayer.y < itemY + itemHeight &&
+                                crossyPlayer.y + crossyPlayer.height > itemY) {
+                                
+                                if (lane.type === 'traffic') {
+                                    gameOver = true;
+                                } else if (lane.type === 'log') {
+                                    onLog = true;
+                                    crossyPlayer.x += lane.speed; // Move with the log
+                                }
                             }
                         });
                     });
                     
                     if (currentLaneIndex !== -1) {
                         const currentLane = lanes[currentLaneIndex];
-                        if (currentLane.type === 'log') {
-                            if (onLog) {
-                                crossyPlayer.x += currentLane.speed;
-                                if (crossyPlayer.x + crossyPlayer.width < 0 || crossyPlayer.x > canvas.width) gameOver = true;
-                            } else {
-                                gameOver = true; // Fell in the water
-                            }
+                        if (currentLane.type === 'log' && !onLog) {
+                           gameOver = true; // Fell in water
                         }
+                    }
+
+                    if (crossyPlayer.x + crossyPlayer.width < 0 || crossyPlayer.x > canvas.width) {
+                        gameOver = true; // Carried off-screen by log
                     }
 
                     if (mainCharElement.complete && mainCharElement.naturalHeight !== 0) {
@@ -545,12 +550,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     }
 
                     drawScore();
-
-                    if(gameOver) {
-                        drawGameOver();
-                    } else {
-                        requestAnimationFrame(gameLoop);
-                    }
+                    requestAnimationFrame(gameLoop);
                 }
 
                 window.movePlayer = function(dir) {
@@ -562,7 +562,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     crossyPlayer.y = Math.max(0, Math.min(canvas.height - crossyPlayer.height, crossyPlayer.y));
                     crossyPlayer.x = Math.max(0, Math.min(canvas.width - crossyPlayer.width, crossyPlayer.x));
                 }
-
                 break;
               }
               default:
@@ -619,7 +618,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                         window.movePlayer(e.code.replace('Arrow', '').toLowerCase());
                     }
                 });
-                 let touchStartX = 0, touchStartY = 0;
+                let touchStartX = 0, touchStartY = 0;
                 canvas.addEventListener('touchstart', e => { 
                     e.preventDefault(); 
                     if(gameOver) return;
@@ -633,8 +632,8 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     if (Math.abs(deltaX) > Math.abs(deltaY)) window.movePlayer(deltaX > 0 ? 'right' : 'left');
                     else window.movePlayer(deltaY > 0 ? 'down' : 'up');
                 }, { passive: false });
-                 canvas.addEventListener('click', () => { if(gameOver) handleRestart() });
-                 canvas.addEventListener('touchstart', () => { if(gameOver) handleRestart() });
+                canvas.addEventListener('click', () => { if(gameOver) handleRestart() });
+                canvas.addEventListener('touchstart', () => { if(gameOver) handleRestart() });
             }
 
             requestAnimationFrame(gameLoop);
@@ -698,6 +697,7 @@ export function exportGameAsHtml(htmlContent: string, config: GameConfig) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
 
 
 
