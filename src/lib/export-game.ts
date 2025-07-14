@@ -1,6 +1,7 @@
 
 
 'use client';
+import JSZip from 'jszip';
 import type { GameConfig } from './types';
 
 export function createHtmlContentForGame(config: GameConfig): string {
@@ -75,9 +76,10 @@ export function createHtmlContentForGame(config: GameConfig): string {
             ctx.fillStyle = 'white';
             ctx.font = '50px "Space Grotesk", sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
+            ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 20);
+            ctx.fillText('Score: ' + score, canvas.width / 2, canvas.height / 2 + 20);
             ctx.font = '20px "Space Grotesk", sans-serif';
-            ctx.fillText('Tap or refresh to restart', canvas.width / 2, canvas.height / 2 + 40);
+            ctx.fillText('Tap or refresh to restart', canvas.width / 2, canvas.height / 2 + 60);
             
             canvas.addEventListener('click', handleRestart, { once: true });
             canvas.addEventListener('touchstart', handleRestart, { once: true });
@@ -105,9 +107,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                   
                   bird.velocityY += gameParams.gravity;
                   bird.y += bird.velocityY;
-                  if (bird.y + bird.height > canvas.height || bird.y < 0) {
-                      gameOver = true;
-                  }
 
                   if (mainCharElement.complete && mainCharElement.naturalHeight !== 0) {
                     ctx.drawImage(mainCharElement, bird.x, bird.y, bird.width, bird.height);
@@ -138,12 +137,12 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     if (p.x < -80) pipes.splice(i, 1);
                   });
                   
-                  drawScore();
-                  if (!gameOver) {
-                    requestAnimationFrame(gameLoop);
-                  } else {
-                    drawGameOver();
+                  if (bird.y + bird.height > canvas.height || bird.y < 0) {
+                      gameOver = true;
                   }
+
+                  drawScore();
+                  requestAnimationFrame(gameLoop);
                 }
                 break;
               }
@@ -202,11 +201,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     });
                     
                     drawScore();
-                    if (!gameOver) {
-                        requestAnimationFrame(gameLoop);
-                    } else {
-                        drawGameOver();
-                    }
+                    requestAnimationFrame(gameLoop);
                 }
                 break;
               }
@@ -252,10 +247,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 }
 
                 gameLoop = function() {
-                    if (gameOver) {
-                        drawGameOver();
-                        return;
-                    }
+                    if (gameOver) { drawGameOver(); return; }
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                     holes.forEach(hole => {
@@ -296,11 +288,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     ctx.fillText('Time: ' + Math.ceil(timeLeft), canvas.width - 10, 30);
                     
                     drawScore();
-                    if (!gameOver) {
-                        requestAnimationFrame(gameLoop);
-                    } else {
-                        drawGameOver();
-                    }
+                    requestAnimationFrame(gameLoop);
                 }
                 break;
               }
@@ -456,11 +444,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     if(gameOver) { drawGameOver(); return; }
                     drawGrid();
                     drawScore();
-                    if (!gameOver) {
-                        requestAnimationFrame(gameLoop);
-                    } else {
-                        drawGameOver();
-                    }
+                    requestAnimationFrame(gameLoop);
                 }
 
                 createGrid();
@@ -564,11 +548,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     }
 
                     drawScore();
-                    if (!gameOver) {
-                        requestAnimationFrame(gameLoop);
-                    } else {
-                        drawGameOver();
-                    }
+                    requestAnimationFrame(gameLoop);
                 }
 
                 window.movePlayer = function(dir) {
@@ -607,7 +587,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 canvas.addEventListener('mousedown', window.jump);
                 canvas.addEventListener('touchstart', (e) => { e.preventDefault(); window.jump(); });
                 document.addEventListener('keydown', (e) => { if (e.code === 'Space') window.jump(); });
-                window.jump(); // Initial jump to start
             } else if (gameType === 'speed-runner') {
                 canvas.addEventListener('mousedown', window.runnerJump);
                 canvas.addEventListener('touchstart', (e) => { e.preventDefault(); window.runnerJump(); }, { passive: false });
@@ -700,19 +679,24 @@ export function createHtmlContentForGame(config: GameConfig): string {
   `;
 }
 
-export function exportGameAsHtml(htmlContent: string, config: GameConfig) {
+export function exportGameAsZip(htmlContent: string, config: GameConfig) {
   if (typeof window === 'undefined' || !config.template) {
     console.error("Export can only be done on the client side with a selected template.");
     return;
   }
 
-  const blob = new Blob([htmlContent], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${config.template.id}-game.html`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  const zip = new JSZip();
+  zip.file("index.html", htmlContent);
+  
+  zip.generateAsync({ type: "blob" })
+    .then(function(content) {
+      const url = URL.createObjectURL(content);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${config.template?.id || 'game'}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
 }

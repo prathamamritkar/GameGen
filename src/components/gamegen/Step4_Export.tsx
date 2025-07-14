@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import type { GameConfig } from '@/lib/types';
 import { ArrowLeft, Download, RefreshCw } from 'lucide-react';
-import { exportGameAsHtml, createHtmlContentForGame } from '@/lib/export-game';
+import { exportGameAsZip, createHtmlContentForGame } from '@/lib/export-game';
 import GamePreview from './GamePreview';
 import { useEffect, useState } from 'react';
 import { getFallbackAssetsForTemplate } from './FallbackAssets';
@@ -45,7 +45,7 @@ export default function Step4Export({ config, onBack, onReset }: Step4Props) {
        if (!finalConfig.assets && finalConfig.template) {
          finalConfig.assets = getFallbackAssetsForTemplate(finalConfig.template.id);
        }
-      exportGameAsHtml(htmlContent, finalConfig);
+      exportGameAsZip(htmlContent, finalConfig);
     }
   };
 
@@ -60,7 +60,7 @@ export default function Step4Export({ config, onBack, onReset }: Step4Props) {
 
       <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
         <Button size="lg" onClick={handleExport} disabled={!htmlContent || isLoading}>
-            <Download className="mr-2 h-5 w-5" /> Export as HTML
+            <Download className="mr-2 h-5 w-5" /> Export as .zip
         </Button>
         <Button size="lg" variant="outline" onClick={onReset}>
             <RefreshCw className="mr-2 h-5 w-5" /> Create New Game
@@ -84,5 +84,3 @@ export default function Step4Export({ config, onBack, onReset }: Step4Props) {
     </section>
   );
 }
-
-    
