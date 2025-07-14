@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -184,7 +185,7 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
                       variant="outline"
                       onClick={handleAutofill} 
                       disabled={isLoading} 
-                      className="w-full sm:w-auto sm:min-w-[220px] border-primary text-primary hover:border-accent hover:text-accent-foreground"
+                      className="w-full sm:w-auto sm:min-w-[180px] border-primary text-primary hover:border-accent hover:text-accent-foreground"
                   >
                       {isAutofilling ? <LoadingIndicator text="Autofilling..."/> : <><Sparkles className="mr-2 h-4 w-4"/> AI Autofill</>}
                   </Button>
@@ -235,3 +236,5 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
     </section>
   );
 }
+
+    
