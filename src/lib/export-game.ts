@@ -341,7 +341,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
 
                     score += matches.length * 10;
                     matches.forEach(gem => {
-                        grid[gem.r][gem.c] = null;
+                        if(grid[gem.r]) grid[gem.r][gem.c] = null;
                     });
                     return true;
                 }
@@ -353,6 +353,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                             if (grid[r][c]) {
                                 if (emptyRow !== r) {
                                     grid[emptyRow][c] = grid[r][c];
+                                    grid[emptyRow][c].r = emptyRow;
                                     grid[r][c] = null;
                                 }
                                 emptyRow--;
@@ -429,7 +430,8 @@ export function createHtmlContentForGame(config: GameConfig): string {
                         y: (i + 1) * laneHeight,
                         type: type,
                         speed: (type === 'traffic' ? gameParams.trafficSpeed : gameParams.logSpeed) * (Math.random() > 0.5 ? 1 : -1) * (0.5 + Math.random()),
-                        items: [{x: Math.random() * canvas.width, width: 80}]
+                        items: [],
+                        nextSpawnTime: 0
                     });
                 }
                 
@@ -443,20 +445,30 @@ export function createHtmlContentForGame(config: GameConfig): string {
 
                     let onLog = false;
                     let currentLaneIndex = -1;
+                    const playerLaneY = crossyPlayer.y + crossyPlayer.height / 2;
+                    if (playerLaneY > laneHeight && playerLaneY < canvas.height - laneHeight) {
+                        currentLaneIndex = Math.floor((playerLaneY - laneHeight) / laneHeight);
+                    }
+
 
                     lanes.forEach((lane, index) => {
                         ctx.fillStyle = lane.type === 'traffic' ? '#555' : '#1E90FF';
                         ctx.fillRect(0, lane.y, canvas.width, lane.height);
                         
-                        const playerLaneY = crossyPlayer.y + crossyPlayer.height / 2;
-                        if (playerLaneY >= lane.y && playerLaneY < lane.y + laneHeight) {
-                            currentLaneIndex = index;
+                        if (Date.now() > lane.nextSpawnTime) {
+                            lane.items.push({
+                                x: lane.speed > 0 ? -80 : canvas.width,
+                                width: Math.random() * 40 + 40
+                            });
+                            lane.nextSpawnTime = Date.now() + Math.random() * 4000 + 2000;
                         }
 
-                        lane.items.forEach(item => {
+                        lane.items.forEach((item, itemIndex) => {
                             item.x += lane.speed;
-                            if(lane.speed > 0 && item.x > canvas.width) item.x = -item.width;
-                            if(lane.speed < 0 && item.x < -item.width) item.x = canvas.width;
+
+                            if((lane.speed > 0 && item.x > canvas.width) || (lane.speed < 0 && item.x < -item.width)) {
+                                lane.items.splice(itemIndex, 1);
+                            }
                             
                             ctx.fillStyle = lane.type === 'traffic' ? 'yellow' : '#8B4513';
                             ctx.fillRect(item.x, lane.y + laneHeight / 2 - 15, item.width, 30);
@@ -475,7 +487,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                                 crossyPlayer.x += currentLane.speed;
                                 if (crossyPlayer.x + crossyPlayer.width < 0 || crossyPlayer.x > canvas.width) gameOver = true;
                             } else {
-                                gameOver = true;
+                                gameOver = true; // Fell in the water
                             }
                         }
                     }
@@ -500,7 +512,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 window.movePlayer = function(dir) {
                     if(gameOver) { window.location.reload(); return; }
                     if(dir === 'up') crossyPlayer.y -= laneHeight;
-                    if(dir === 'down') crossyPlayer.y = Math.min(canvas.height - 40, crossyPlayer.y + laneHeight);
+                    if(dir === 'down') crossyPlayer.y += laneHeight;
                     if(dir === 'left') crossyPlayer.x -= 30;
                     if(dir === 'right') crossyPlayer.x += 30;
                     crossyPlayer.y = Math.max(0, Math.min(canvas.height - crossyPlayer.height, crossyPlayer.y));
