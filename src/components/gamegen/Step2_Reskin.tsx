@@ -36,9 +36,9 @@ const reskinSchema = z.object({
   npcs: z.string().min(3, 'Describe the NPCs.'),
   mainCharacter: z.string().min(3, 'Describe the main character.'),
   difficultySettings: z.object({
-    easy: z.string().optional(),
-    medium: z.string().optional(),
-    hard: z.string().optional(),
+    easy: z.string().min(1, "Easy description is required."),
+    medium: z.string().min(1, "Medium description is required."),
+    hard: z.string().min(1, "Hard description is required."),
   }),
   musicTheme: z.string().min(3, 'Music theme is required.'),
   musicDuration: z.number().min(5).max(60),
@@ -63,9 +63,9 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
       npcs: config.reskinInput?.npcs || '',
       mainCharacter: config.reskinInput?.mainCharacter || '',
       difficultySettings: {
-        easy: config.reskinInput?.difficultySettings.easy || 'Slower speed, fewer obstacles.',
-        medium: config.reskinInput?.difficultySettings.medium || 'Normal speed and obstacles.',
-        hard: config.reskinInput?.difficultySettings.hard || 'Faster speed, many obstacles.',
+        easy: config.reskinInput?.difficultySettings?.easy || 'Slower speed, fewer obstacles.',
+        medium: config.reskinInput?.difficultySettings?.medium || 'Normal speed and obstacles.',
+        hard: config.reskinInput?.difficultySettings?.hard || 'Faster speed, many obstacles.',
       },
       musicTheme: config.music?.theme || '',
       musicDuration: config.music?.duration || 30,
@@ -89,9 +89,9 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
       npcs: data.npcs,
       mainCharacter: data.mainCharacter,
       difficultySettings: {
-          easy: data.difficultySettings.easy || 'Slower speed, fewer obstacles.',
-          medium: data.difficultySettings.medium || 'Normal speed and obstacles.',
-          hard: data.difficultySettings.hard || 'Faster speed, many obstacles.',
+          easy: data.difficultySettings.easy,
+          medium: data.difficultySettings.medium,
+          hard: data.difficultySettings.hard,
       },
     };
     onUpdateConfig({ reskinInput });
@@ -307,9 +307,9 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
                     <Button 
                         type="submit" 
                         disabled={isGenerating || isAutofilling} 
-                        className="w-full sm:w-auto sm:min-w-[220px] text-lg py-6 sm:py-2 sm:text-sm"
+                        className="w-full sm:w-auto sm:min-w-[220px]"
                     >
-                        {isGenerating ? <LoadingIndicator text="Generating..."/> : <>Generate Assets & Music</>}
+                        {isGenerating ? <LoadingIndicator text="Generating..."/> : <>Generate Assets &amp; Music</>}
                     </Button>
                     <Button 
                         type="button" 
@@ -381,3 +381,5 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
     </section>
   );
 }
+
+    
