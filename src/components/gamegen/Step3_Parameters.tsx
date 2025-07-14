@@ -50,11 +50,12 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
 
   const generatePreview = () => {
     setIsPreviewLoading(true);
-    if (config.template) {
+    // Only generate preview if assets are available to prevent errors
+    if (config.template && config.assets) {
         const content = createHtmlContentForGame(config);
         setHtmlContent(content);
     } else {
-        setHtmlContent(null);
+        setHtmlContent(createHtmlContentForGame(config));
     }
     // Simulate build time
     setTimeout(() => setIsPreviewLoading(false), 500); 
@@ -130,9 +131,14 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
              toast({ title: "Request field is already filled!", description: "AI didn't find any blanks to fill." });
         }
 
-    } catch(error) {
+    } catch(error: any) {
         console.error('AI parameter autofill failed:', error);
-        toast({ title: "Autofill Failed", description: "The AI failed to generate a suggestion. Please try again.", variant: "destructive" });
+        const errorMessage = (error.message || '').toLowerCase();
+        if (errorMessage.includes('429') || errorMessage.includes('quota')) {
+          toast({ title: "Autofill Rate Limit Hit", description: "You've exceeded the daily quota for AI suggestions.", variant: "destructive" });
+        } else {
+          toast({ title: "Autofill Failed", description: "The AI failed to generate a suggestion. Please try again.", variant: "destructive" });
+        }
     } finally {
         setIsAutofilling(false);
     }
@@ -152,48 +158,48 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
       </div>
 
       <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-headline flex items-center gap-2"><SlidersHorizontal /> Adjust Gameplay</CardTitle>
-              <CardDescription>
-                Examples: "make the game faster and more challenging", "add more power-ups", "lower the gravity".
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="request">How should the game change?</Label>
-                <Textarea
-                  id="request"
-                  {...register('request')}
-                  placeholder="e.g., Make the game easier for a beginner..."
-                  rows={5}
-                />
-                {errors.request && <p className="text-sm text-destructive mt-1">{errors.request.message}</p>}
-              </div>
-              <div className="flex w-full gap-4">
-                  <Button 
-                      type="submit" 
-                      disabled={isLoading} 
-                      className="w-3/4"
-                  >
-                      {isGeneratingParams ? <LoadingIndicator text="Adjusting..." /> : 'Generate New Parameters'}
-                  </Button>
-                  <Button 
-                      type="button" 
-                      variant="outline"
-                      onClick={handleAutofill} 
-                      disabled={isLoading} 
-                      className="w-1/4 border-primary text-primary hover:border-accent hover:text-accent-foreground"
-                  >
-                      {isAutofilling ? <LoadingIndicator text="Autofilling..."/> : <><Sparkles className="mr-2 h-4 w-4"/>AI Autofill</>}
-                  </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </form>
+        <div className="flex flex-col gap-8">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <Card>
+                <CardHeader>
+                <CardTitle className="font-headline flex items-center gap-2"><SlidersHorizontal /> Adjust Gameplay</CardTitle>
+                <CardDescription>
+                    Examples: "make the game faster and more challenging", "add more power-ups", "lower the gravity".
+                </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                <div>
+                    <Label htmlFor="request">How should the game change?</Label>
+                    <Textarea
+                    id="request"
+                    {...register('request')}
+                    placeholder="e.g., Make the game easier for a beginner..."
+                    rows={5}
+                    />
+                    {errors.request && <p className="text-sm text-destructive mt-1">{errors.request.message}</p>}
+                </div>
+                <div className="flex w-full gap-4">
+                    <Button 
+                        type="submit" 
+                        disabled={isLoading} 
+                        className="w-3/4"
+                    >
+                        {isGeneratingParams ? <LoadingIndicator text="Adjusting..." /> : 'Generate New Parameters'}
+                    </Button>
+                    <Button 
+                        type="button" 
+                        variant="outline"
+                        onClick={handleAutofill} 
+                        disabled={isLoading} 
+                        className="w-1/4 border-primary text-primary hover:border-accent hover:text-accent-foreground"
+                    >
+                        {isAutofilling ? <LoadingIndicator text="Autofilling..."/> : <><Sparkles className="mr-2 h-4 w-4"/>AI Autofill</>}
+                    </Button>
+                </div>
+                </CardContent>
+            </Card>
+            </form>
 
-        <div className="space-y-8">
             <Card>
                 <CardHeader>
                     <CardTitle className="font-headline">Game Parameters</CardTitle>
@@ -203,22 +209,25 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
                     {isGeneratingParams && <LoadingIndicator text="AI is tuning your game..." />}
                     {!isGeneratingParams && (
                         <div className="space-y-4">
-                             <div>
+                            <div>
                                 <h3 className="font-bold">Current Parameters:</h3>
                                 <pre className="mt-2 w-full rounded-md bg-muted p-4 text-sm max-h-60 overflow-auto">
                                     <code>{JSON.stringify(currentParams, null, 2)}</code>
                                 </pre>
                             </div>
-                           {config.parameters?.explanation && (
-                             <div>
+                        {config.parameters?.explanation && (
+                            <div>
                                 <h3 className="font-bold">AI's Explanation:</h3>
                                 <p className="mt-2 text-muted-foreground italic p-4 border rounded-md">{config.parameters.explanation}</p>
                             </div>
-                           )}
+                        )}
                         </div>
                     )}
                 </CardContent>
             </Card>
+        </div>
+        <div>
+             {/* This space is intentionally left for the preview which is now at the bottom */}
         </div>
       </div>
 
