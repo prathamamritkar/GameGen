@@ -278,44 +278,112 @@ export function createHtmlContentForGame(config: GameConfig): string {
               case 'match-3': {
                 const gridSize = gameParams.gridSize;
                 const cellSize = canvas.width / (gridSize + 2);
-                const colors = ['red', 'green', 'blue', 'yellow', 'purple', 'orange'].slice(0, gameParams.numColors);
+                const colors = ['#EF4444', '#3B82F6', '#22C55E', '#FBBF24', '#A855F7', '#F97316'].slice(0, gameParams.numColors);
                 let grid = [];
                 let selected = null;
+                let isSwapping = false;
+
+                function createGem(r, c) {
+                    return { color: colors[Math.floor(Math.random() * colors.length)], r, c };
+                }
 
                 function createGrid() {
                     for (let r = 0; r < gridSize; r++) {
                         grid[r] = [];
                         for (let c = 0; c < gridSize; c++) {
-                            grid[r][c] = { color: colors[Math.floor(Math.random() * colors.length)], r, c };
+                            grid[r][c] = createGem(r, c);
                         }
                     }
+                    // Prevent matches on spawn
+                    if (findMatches().length > 0) createGrid();
                 }
                 
                 function drawGrid() {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     for (let r = 0; r < gridSize; r++) {
                         for (let c = 0; c < gridSize; c++) {
+                            if (!grid[r][c]) continue;
                             ctx.fillStyle = grid[r][c].color;
-                            ctx.fillRect(c * cellSize + cellSize, r * cellSize + cellSize, cellSize - 2, cellSize - 2);
+                            ctx.fillRect(c * cellSize + cellSize, r * cellSize + cellSize, cellSize - 4, cellSize - 4);
                             if (selected && selected.r === r && selected.c === c) {
                                 ctx.strokeStyle = 'white';
                                 ctx.lineWidth = 3;
-                                ctx.strokeRect(c * cellSize + cellSize, r * cellSize + cellSize, cellSize - 2, cellSize - 2);
+                                ctx.strokeRect(c * cellSize + cellSize, r * cellSize + cellSize, cellSize - 4, cellSize - 4);
                             }
                         }
                     }
                 }
                 
-                gameLoop = function() {
-                    if(gameOver) { drawGameOver(); return; }
-                    drawGrid();
-                    drawScore();
-                    requestAnimationFrame(gameLoop);
+                function findMatches() {
+                    let matches = [];
+                    // Horizontal
+                    for (let r = 0; r < gridSize; r++) {
+                        for (let c = 0; c < gridSize - 2; c++) {
+                            if (grid[r][c] && grid[r][c+1] && grid[r][c+2] && grid[r][c].color === grid[r][c+1].color && grid[r][c+1].color === grid[r][c+2].color) {
+                                matches.push(grid[r][c], grid[r][c+1], grid[r][c+2]);
+                            }
+                        }
+                    }
+                    // Vertical
+                    for (let c = 0; c < gridSize; c++) {
+                        for (let r = 0; r < gridSize - 2; r++) {
+                            if (grid[r][c] && grid[r+1][c] && grid[r+2][c] && grid[r][c].color === grid[r+1][c].color && grid[r+1][c].color === grid[r+2][c].color) {
+                                matches.push(grid[r][c], grid[r+1][c], grid[r+2][c]);
+                            }
+                        }
+                    }
+                    return [...new Set(matches)]; // Unique matches
+                }
+
+                function clearMatches() {
+                    const matches = findMatches();
+                    if (matches.length === 0) return false;
+
+                    score += matches.length * 10;
+                    matches.forEach(gem => {
+                        grid[gem.r][gem.c] = null;
+                    });
+                    return true;
+                }
+
+                function dropGems() {
+                    for (let c = 0; c < gridSize; c++) {
+                        let emptyRow = gridSize - 1;
+                        for (let r = gridSize - 1; r >= 0; r--) {
+                            if (grid[r][c]) {
+                                if (emptyRow !== r) {
+                                    grid[emptyRow][c] = grid[r][c];
+                                    grid[r][c] = null;
+                                }
+                                emptyRow--;
+                            }
+                        }
+                    }
+                }
+
+                function fillGems() {
+                    for (let r = 0; r < gridSize; r++) {
+                        for (let c = 0; c < gridSize; c++) {
+                            if (!grid[r][c]) {
+                                grid[r][c] = createGem(r, c);
+                            }
+                        }
+                    }
+                }
+                
+                async function handleMatches() {
+                    isSwapping = true;
+                    while (clearMatches()) {
+                        await new Promise(res => setTimeout(res, 200));
+                        dropGems();
+                        fillGems();
+                        await new Promise(res => setTimeout(res, 200));
+                    }
+                    isSwapping = false;
                 }
 
                 window.handleClickOrTap = function(ex, ey) {
-                    if (gameOver) { window.location.reload(); return; }
-
+                    if (gameOver || isSwapping) return;
                     const rect = canvas.getBoundingClientRect();
                     const c = Math.floor((ex - rect.left - cellSize) / cellSize);
                     const r = Math.floor((ey - rect.top - cellSize) / cellSize);
@@ -327,11 +395,26 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     } else {
                         if(Math.abs(selected.r - r) + Math.abs(selected.c - c) === 1) {
                             [grid[selected.r][selected.c], grid[r][c]] = [grid[r][c], grid[selected.r][selected.c]];
-                            score += 10;
+                            if (findMatches().length > 0) {
+                                handleMatches();
+                            } else {
+                                // Invalid move, swap back
+                                setTimeout(() => {
+                                    [grid[selected.r][selected.c], grid[r][c]] = [grid[r][c], grid[selected.r][selected.c]];
+                                }, 200);
+                            }
                         }
                         selected = null;
                     }
                 }
+
+                gameLoop = function() {
+                    if(gameOver) { drawGameOver(); return; }
+                    drawGrid();
+                    drawScore();
+                    requestAnimationFrame(gameLoop);
+                }
+
                 createGrid();
                 break;
               }
