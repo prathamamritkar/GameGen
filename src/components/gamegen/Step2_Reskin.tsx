@@ -16,6 +16,7 @@ import { reskinGameAssets } from '@/ai/flows/reskin-game-assets';
 import { generateGameMusic } from '@/ai/flows/generate-game-music';
 import { autofillReskinBlanks } from '@/ai/flows/autofill-reskin-blanks';
 import type { GameConfig, ReskinInput, Assets, Music, Difficulty } from '@/lib/types';
+import { getFallbackDataForTemplate } from '@/lib/fallback-data';
 import LoadingIndicator from './LoadingIndicator';
 import { ArrowLeft, ArrowRight, Wand2, Music as MusicIcon, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -45,23 +46,6 @@ const reskinSchema = z.object({
 });
 
 type ReskinFormData = z.infer<typeof reskinSchema>;
-
-const fallbackValues = {
-  story: "A brave astronaut kitten explores a galaxy made of yarn and chases a cosmic mouse.",
-  theme: "Cosmic Kitten Adventure",
-  artStyle: "Retro Cartoon",
-  environment: "A vibrant nebula with planets that look like balls of yarn and asteroid fields of catnip.",
-  npcs: "Grumpy space dogs in flying saucers and swirling black holes that steal your yarn.",
-  mainCharacter: "A small kitten in a fishbowl space helmet, riding a tiny rocket.",
-  musicTheme: "Upbeat and whimsical synth-pop",
-};
-
-const fallbackAssets: Assets = {
-    newAssetsDescription: "A default set of assets for a Cosmic Kitten Adventure game, used as a fallback.",
-    newMainCharacterImage: "https://placehold.co/512x512.png",
-    newEnvironmentImage: "https://placehold.co/800x450.png",
-    newNpcImages: ["https://placehold.co/512x512.png"],
-};
 
 export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: Step2Props) {
   const { toast, dismiss } = useToast();
@@ -163,6 +147,7 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
         console.error('AI generation failed:', error);
         const errorMessage = (error.message || '').toLowerCase();
         if (errorMessage.includes('429') || errorMessage.includes('quota')) {
+          const fallbackAssets = getFallbackDataForTemplate(config.template?.id).assets;
           toast({
             title: "AI Quota Reached",
             description: "Used fallback placeholder assets instead.",
@@ -244,9 +229,12 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
         console.error('AI autofill failed:', error);
         const errorMessage = (error.message || '').toLowerCase();
         if (errorMessage.includes('429') || errorMessage.includes('quota')) {
-          toast({ title: "AI Quota Reached", description: "Used fallback values instead.", variant: "destructive" });
+          toast({ title: "AI Quota Reached", description: "Used a fallback theme instead.", variant: "destructive" });
+          
+          const fallbackValues = getFallbackDataForTemplate(config.template?.id).reskinForm;
           const currentFormValues = getValues();
           let firstFilledField: keyof typeof fallbackValues | null = null;
+          
           (Object.keys(fallbackValues) as Array<keyof typeof fallbackValues>).forEach(key => {
             if (!currentFormValues[key]) {
               setValue(key, fallbackValues[key], { shouldValidate: true, shouldDirty: true });
@@ -414,21 +402,21 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
                                 <div>
                                     <h3 className="font-bold text-lg">Main Character</h3>
                                     <div className="relative w-full aspect-square rounded-lg overflow-hidden border bg-muted mt-2">
-                                        <Image src={generatedAssets.newMainCharacterImage} alt="Generated Main Character" fill className="object-contain p-2" data-ai-hint="kitten astronaut" />
+                                        <Image src={generatedAssets.newMainCharacterImage} alt="Generated Main Character" fill className="object-contain p-2" data-ai-hint={generatedAssets.dataAiHint?.mainCharacter} />
                                     </div>
                                 </div>
                                  <div>
                                     <h3 className="font-bold text-lg">NPCs / Obstacles</h3>
                                     <div className="relative w-full aspect-square rounded-lg overflow-hidden border bg-muted mt-2">
                                         {generatedAssets.newNpcImages.length > 0 ? (
-                                             <Image src={generatedAssets.newNpcImages[0]} alt="Generated NPCs" fill className="object-contain p-2" data-ai-hint="dog ufo" />
+                                             <Image src={generatedAssets.newNpcImages[0]} alt="Generated NPCs" fill className="object-contain p-2" data-ai-hint={generatedAssets.dataAiHint?.npc} />
                                         ) : <p className="text-muted-foreground p-4">No NPC image generated.</p>}
                                     </div>
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-lg">Environment</h3>
                                     <div className="relative w-full aspect-video rounded-lg overflow-hidden border bg-muted mt-2">
-                                        <Image src={generatedAssets.newEnvironmentImage} alt="Generated Environment" fill className="object-cover" data-ai-hint="space nebula" />
+                                        <Image src={generatedAssets.newEnvironmentImage} alt="Generated Environment" fill className="object-cover" data-ai-hint={generatedAssets.dataAiHint?.environment} />
                                     </div>
                                 </div>
                             </div>

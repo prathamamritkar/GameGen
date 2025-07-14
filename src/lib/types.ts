@@ -29,6 +29,11 @@ export type Assets = {
   newMainCharacterImage: string;
   newEnvironmentImage: string;
   newNpcImages: string[];
+  dataAiHint?: {
+    mainCharacter: string;
+    npc: string;
+    environment: string;
+  }
 };
 
 export type Music = {

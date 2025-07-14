@@ -7,7 +7,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
   const theme = config.reskinInput?.theme || 'A fun game';
   const mainCharacterDesc = config.reskinInput?.mainCharacter || 'The hero';
   const params = JSON.stringify(config.parameters?.adjusted || config.template?.defaultParams || {});
-  const mainCharImg = config.assets?.newMainCharacterImage || '';
+  const mainCharImg = config.assets?.newMainCharacterImage || 'https://placehold.co/512x512.png';
   const environmentImg = config.assets?.newEnvironmentImage || 'https://placehold.co/800x600.png';
   const musicSrc = config.music?.dataUri || '';
   const gameType = config.template?.id || 'flappy-bird';

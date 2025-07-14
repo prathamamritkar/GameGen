@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { controlGameParameters } from '@/ai/flows/control-game-parameters';
 import { autofillParametersBlanks } from '@/ai/flows/autofill-parameters-blanks';
 import type { GameConfig, Parameters } from '@/lib/types';
+import { getFallbackDataForTemplate } from '@/lib/fallback-data';
 import LoadingIndicator from './LoadingIndicator';
 import { ArrowLeft, ArrowRight, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -50,9 +51,17 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
 
   const generatePreview = () => {
     setIsPreviewLoading(true);
-    // Only generate preview if template is available
-    if (config.template) {
+    // Only generate preview if template and assets are available
+    if (config.template && config.assets) {
         const content = createHtmlContentForGame(config);
+        setHtmlContent(content);
+    } else if (config.template) {
+        // Fallback preview if assets are missing
+        const fallbackConfig = {
+            ...config,
+            assets: getFallbackDataForTemplate(config.template.id).assets
+        }
+        const content = createHtmlContentForGame(fallbackConfig);
         setHtmlContent(content);
     }
     // Simulate build time
@@ -135,7 +144,7 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
         if (errorMessage.includes('429') || errorMessage.includes('quota')) {
           toast({ title: "AI Quota Reached", description: "Used a fallback suggestion instead.", variant: "destructive" });
           if (!getValues('request')) {
-              const fallbackRequest = "Make the game much faster and increase the number of obstacles, but also add more power-ups as a reward.";
+              const fallbackRequest = getFallbackDataForTemplate(config.template?.id).parameterRequest;
               setValue('request', fallbackRequest, { shouldValidate: true, shouldDirty: true });
               setFocus('request');
           }
