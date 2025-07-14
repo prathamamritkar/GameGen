@@ -13,10 +13,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { reskinGameAssets } from '@/ai/flows/reskin-game-assets';
 import { generateGameMusic } from '@/ai/flows/generate-game-music';
+import { autofillReskinBlanks } from '@/ai/flows/autofill-reskin-blanks';
 import type { GameConfig, ReskinInput, Assets, Music } from '@/lib/types';
 import LoadingIndicator from './LoadingIndicator';
-import { ArrowLeft, ArrowRight, Wand2, Music as MusicIcon } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Wand2, Music as MusicIcon, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface Step2Props {
   config: GameConfig;
@@ -44,12 +46,13 @@ const reskinSchema = z.object({
 type ReskinFormData = z.infer<typeof reskinSchema>;
 
 export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: Step2Props) {
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const { toast, dismiss } = useToast();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isAutofilling, setIsAutofilling] = useState(false);
   const [generatedAssets, setGeneratedAssets] = useState<Assets | null>(config.assets || null);
   const [generatedMusic, setGeneratedMusic] = useState<Music | null>(config.music || null);
 
-  const { register, handleSubmit, control, formState: { errors } } = useForm<ReskinFormData>({
+  const { register, handleSubmit, control, formState: { errors }, getValues, setValue, setFocus } = useForm<ReskinFormData>({
     resolver: zodResolver(reskinSchema),
     defaultValues: {
       story: config.reskinInput?.story || '',
@@ -73,7 +76,7 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
         toast({ title: "Error", description: "No game template selected.", variant: "destructive" });
         return;
     }
-    setIsLoading(true);
+    setIsGenerating(true);
     setGeneratedAssets(null);
     setGeneratedMusic(null);
 
@@ -118,9 +121,76 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
         console.error('AI generation failed:', error);
         toast({ title: "Generation Failed", description: "The AI failed to generate assets. Please try again.", variant: "destructive" });
     } finally {
-        setIsLoading(false);
+        setIsGenerating(false);
     }
   };
+  
+  const handleAutofill = async () => {
+    if (!config.template) {
+        toast({ title: "Error", description: "No game template selected.", variant: "destructive" });
+        return;
+    }
+    setIsAutofilling(true);
+    const currentValues = getValues();
+    const previousValues = {...currentValues}; // Backup for undo
+    
+    try {
+        const result = await autofillReskinBlanks({
+            gameTemplate: config.template.name as any,
+            currentValues: {
+                story: currentValues.story,
+                theme: currentValues.theme,
+                artStyle: currentValues.artStyle,
+                environment: currentValues.environment,
+                npcs: currentValues.npcs,
+                mainCharacter: currentValues.mainCharacter,
+                musicTheme: currentValues.musicTheme,
+            }
+        });
+
+        let firstFilledField: (keyof ReskinFormData) | null = null;
+        let filledCount = 0;
+
+        Object.entries(result.filledValues).forEach(([key, value]) => {
+            if(value) {
+                setValue(key as keyof ReskinFormData, value, { shouldValidate: true, shouldDirty: true });
+                if (!firstFilledField) {
+                    firstFilledField = key as keyof ReskinFormData;
+                }
+                filledCount++;
+            }
+        });
+
+        if (firstFilledField) {
+            setFocus(firstFilledField);
+        }
+
+        if (filledCount > 0) {
+            const { id } = toast({
+                title: `${filledCount} fields filled by AI`,
+                description: (
+                    <Button variant="link" className="p-0 h-auto" onClick={() => {
+                        Object.entries(previousValues).forEach(([key, value]) => {
+                            setValue(key as keyof ReskinFormData, value, { shouldValidate: true });
+                        });
+                        dismiss(id);
+                        toast({ title: "Undo successful", description: "Your previous values have been restored." });
+                    }}>Undo</Button>
+                ),
+                duration: 5000,
+            });
+        } else {
+            toast({ title: "All fields are already filled!", description: "AI didn't find any blanks to fill." });
+        }
+
+    } catch(error) {
+        console.error('AI autofill failed:', error);
+        toast({ title: "Autofill Failed", description: "The AI failed to generate suggestions. Please try again.", variant: "destructive" });
+    } finally {
+        setIsAutofilling(false);
+    }
+  };
+
 
   return (
     <section>
@@ -129,7 +199,7 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
             Customize with AI
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-            Fill in the details below and let our AI bring your game to life.
+            Fill in the details below, or let our AI autofill the blanks to get you started.
             </p>
         </div>
 
@@ -228,9 +298,24 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
                     </CardContent>
                 </Card>
                 
-                <Button type="submit" disabled={isLoading} className="w-full text-lg py-6">
-                    {isLoading ? <LoadingIndicator text="Generating..."/> : <>Generate Assets & Music</>}
-                </Button>
+                <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-4 gap-3">
+                    <Button 
+                        type="button" 
+                        variant="outline"
+                        onClick={handleAutofill} 
+                        disabled={isAutofilling || isGenerating} 
+                        className="w-full sm:w-auto sm:min-w-[220px] border-primary text-primary hover:border-accent hover:text-accent-foreground"
+                    >
+                        {isAutofilling ? <LoadingIndicator text="Autofilling..."/> : <><Sparkles className="mr-2 h-4 w-4"/> AI Autofill Blanks</>}
+                    </Button>
+                    <Button 
+                        type="submit" 
+                        disabled={isGenerating || isAutofilling} 
+                        className="w-full sm:w-auto sm:min-w-[220px] text-lg py-6 sm:py-2 sm:text-sm"
+                    >
+                        {isGenerating ? <LoadingIndicator text="Generating..."/> : <>Generate Assets & Music</>}
+                    </Button>
+                </div>
             </form>
 
             {/* Preview Section */}
@@ -241,15 +326,15 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
                         <CardDescription>Your generated assets will appear here.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {isLoading && <LoadingIndicator text="AI is creating your world..." />}
-                        {!isLoading && !generatedAssets && (
+                        {(isGenerating || isAutofilling) && <LoadingIndicator text={isGenerating ? "AI is creating your world..." : "AI is filling the blanks..."} />}
+                        {!isGenerating && !isAutofilling && !generatedAssets && (
                             <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
                                 <Wand2 className="h-12 w-12 mb-4" />
                                 <p>Your generated game assets will be shown here.</p>
                             </div>
                         )}
                         {generatedAssets && (
-                            <div className="space-y-4">
+                            <div className={cn("space-y-4", (isGenerating || isAutofilling) && "opacity-50")}>
                                 <div>
                                     <h3 className="font-bold text-lg">Main Character</h3>
                                     <div className="relative w-full aspect-square rounded-lg overflow-hidden border bg-muted mt-2">
@@ -273,7 +358,7 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
                             </div>
                         )}
                         {generatedMusic && (
-                            <div className="mt-4">
+                            <div className={cn("mt-4", (isGenerating || isAutofilling) && "opacity-50")}>
                                 <h3 className="font-bold text-lg mb-2">Background Music</h3>
                                 <audio controls src={generatedMusic.dataUri} className="w-full">
                                     Your browser does not support the audio element.

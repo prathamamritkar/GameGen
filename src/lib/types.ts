@@ -50,3 +50,29 @@ export type GameConfig = {
   music?: Music;
   parameters?: Parameters;
 };
+
+// Types for the Autofill flow
+export type AutofillReskinBlanksInput = {
+  gameTemplate: string;
+  currentValues: {
+    story: string;
+    theme: string;
+    artStyle: string;
+    environment: string;
+    npcs: string;
+    mainCharacter: string;
+    musicTheme: string;
+  };
+};
+
+export type AutofillReskinBlanksOutput = {
+  filledValues: {
+    story: string;
+    theme: string;
+    artStyle: string;
+    environment: string;
+    npcs: string;
+    mainCharacter: string;
+    musicTheme: string;
+  };
+};
