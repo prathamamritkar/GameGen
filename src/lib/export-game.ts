@@ -1,4 +1,5 @@
 
+
 'use client';
 import type { GameConfig } from './types';
 
@@ -64,6 +65,10 @@ export function createHtmlContentForGame(config: GameConfig): string {
             ctx.fillText('Score: ' + score, 10, 30);
         }
 
+        function handleRestart() {
+            window.location.reload();
+        }
+
         function drawGameOver() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -73,6 +78,9 @@ export function createHtmlContentForGame(config: GameConfig): string {
             ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
             ctx.font = '20px "Space Grotesk", sans-serif';
             ctx.fillText('Tap or refresh to restart', canvas.width / 2, canvas.height / 2 + 40);
+            
+            canvas.addEventListener('click', handleRestart, { once: true });
+            canvas.addEventListener('touchstart', handleRestart, { once: true });
         }
         
         function setupGameLogic() {
@@ -83,7 +91,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 let frameCount = 0;
 
                 window.jump = function() {
-                    if (gameOver) { window.location.reload(); return; }
+                    if (gameOver) return;
                     if (!gameStarted) return;
                     bird.velocityY = gameParams.lift;
                 }
@@ -141,7 +149,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 let runnerFrame = 0;
 
                 window.runnerJump = function() {
-                    if (gameOver) { window.location.reload(); return; }
+                    if (gameOver) return;
                     if (!gameStarted) return;
                     if (player.onGround) {
                         player.velocityY = -20;
@@ -207,7 +215,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 let timeLeft = gameParams.gameDuration;
                 
                 window.whackAt = function(x, y) {
-                    if (gameOver) { window.location.reload(); return; }
+                    if (gameOver) return;
                     if (!gameStarted) return;
                     holes.forEach(hole => {
                         if (hole.visible && Math.hypot(x - hole.x, y - (hole.y - 20)) < 35) {
@@ -386,7 +394,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 }
 
                 window.handleClickOrTap = function(e) {
-                    if (gameOver || isSwapping) { if(gameOver) window.location.reload(); return; }
+                    if (gameOver || isSwapping) return;
                     if (!gameStarted) return;
                     const rect = canvas.getBoundingClientRect();
                     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
@@ -514,7 +522,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 }
 
                 window.movePlayer = function(dir) {
-                    if(gameOver) { window.location.reload(); return; }
+                    if (gameOver) return;
                     if (!gameStarted) return;
                     if(dir === 'up') crossyPlayer.y -= laneHeight;
                     if(dir === 'down') crossyPlayer.y += laneHeight;
@@ -536,10 +544,9 @@ export function createHtmlContentForGame(config: GameConfig): string {
         }
         
         function handleFirstInput(event) {
-            if (gameStarted) {
-                if(gameOver) window.location.reload();
-                return;
-            };
+            if (gameStarted) return;
+            if (event.type === 'keydown' && event.code !== 'Space' && gameType !== 'crossy-road') return;
+
 
             event.preventDefault(); 
             gameStarted = true;
@@ -550,14 +557,14 @@ export function createHtmlContentForGame(config: GameConfig): string {
             canvas.removeEventListener('touchstart', handleFirstInput);
             
             if (gameType === 'flappy-bird') {
-                document.addEventListener('keydown', (e) => { if (e.code === 'Space') window.jump(); });
-                canvas.addEventListener('mousedown', window.jump);
+                canvas.addEventListener('click', window.jump);
                 canvas.addEventListener('touchstart', (e) => { e.preventDefault(); window.jump(); });
+                document.addEventListener('keydown', (e) => { if (e.code === 'Space') window.jump(); });
                 window.jump();
             } else if (gameType === 'speed-runner') {
-                document.addEventListener('keydown', (e) => { if (e.code === 'Space') window.runnerJump(); });
-                canvas.addEventListener('mousedown', window.runnerJump);
+                canvas.addEventListener('click', window.runnerJump);
                 canvas.addEventListener('touchstart', (e) => { e.preventDefault(); window.runnerJump(); });
+                document.addEventListener('keydown', (e) => { if (e.code === 'Space') window.runnerJump(); });
                 window.runnerJump();
             } else if (gameType === 'whack-a-mole') {
                  canvas.addEventListener('mousedown', (e) => {
@@ -572,7 +579,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 });
                 window.startTimer();
             } else if (gameType === 'match-3') {
-                canvas.addEventListener('mousedown', (e) => window.handleClickOrTap(e));
+                canvas.addEventListener('click', (e) => window.handleClickOrTap(e));
                 canvas.addEventListener('touchstart', (e) => {
                     e.preventDefault();
                     window.handleClickOrTap(e);
@@ -656,3 +663,4 @@ export function exportGameAsHtml(htmlContent: string, config: GameConfig) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
