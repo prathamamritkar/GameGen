@@ -47,17 +47,19 @@ const getFieldsToFill = (currentValues: AutofillReskinBlanksInput['currentValues
         .map(([key]) => key);
 
     if (blankFields.length === 0) {
-        return "All fields are already filled. Do not generate any new content.";
+        return "All fields are already filled. Do not generate any new content. Return empty strings for all fields.";
     }
-    return `Please generate content for the following fields: ${blankFields.join(', ')}.`;
+    return `Please generate creative suggestions ONLY for the following empty fields: ${blankFields.join(', ')}. For any field that already has a value, you MUST return an empty string.`;
 }
 
 const autofillPrompt = ai.definePrompt({
   name: 'autofillPrompt',
-  input: { schema: AutofillInputSchema },
+  input: { schema: AutofillInputSchema.extend({ fieldsToFill: z.string() }) },
   output: { schema: AutofillOutputSchema },
   prompt: `You are a creative assistant for a game generation app.
 The user is making a game based on the "{{gameTemplate}}" template and wants help filling in some creative details.
+
+Your task is to generate creative and consistent suggestions ONLY for the fields that are currently empty. Do not change or overwrite any existing text.
 
 User's current ideas (some fields may be blank):
 - Story: "{{currentValues.story}}"
@@ -67,11 +69,6 @@ User's current ideas (some fields may be blank):
 - NPCs/Obstacles: "{{currentValues.npcs}}"
 - Main Character: "{{currentValues.mainCharacter}}"
 - Music Theme: "{{currentValues.musicTheme}}"
-
-Your task is to generate creative and consistent suggestions ONLY for the fields that are currently empty. Do not change or overwrite any existing text.
-If a field has text, return an empty string for it in your response.
-
-Based on the game template and any existing values, provide creative suggestions.
 
 {{{fieldsToFill}}}
 
@@ -88,6 +85,17 @@ const autofillReskinBlanksFlow = ai.defineFlow(
   },
   async (input) => {
     const fieldsToFill = getFieldsToFill(input.currentValues);
+    
+    // If all fields are full, no need to call the AI.
+    if (!fieldsToFill.includes('Please generate')) {
+        return { 
+            filledValues: {
+                story: '', theme: '', artStyle: '', environment: '', 
+                npcs: '', mainCharacter: '', musicTheme: ''
+            }
+        };
+    }
+
     const { output } = await autofillPrompt({ ...input, fieldsToFill });
     if (!output) {
         throw new Error("The AI failed to generate suggestions.");
