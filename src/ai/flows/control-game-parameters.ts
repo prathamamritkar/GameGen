@@ -33,7 +33,11 @@ export async function controlGameParameters(input: ControlGameParametersInput): 
 const adjustParametersPrompt = ai.definePrompt({
   name: 'adjustParametersPrompt',
   input: {
-    schema: ControlGameParametersInputSchema,
+    schema: z.object({
+      gameType: z.string(),
+      parameterAdjustmentRequest: z.string(),
+      currentParameters: z.string(), // Changed to string
+    })
   },
   output: {
     schema: ControlGameParametersOutputSchema,
@@ -42,7 +46,7 @@ const adjustParametersPrompt = ai.definePrompt({
 
 They have requested the following parameter adjustment: "{{parameterAdjustmentRequest}}".
 
-Here are the current parameters, represented as a JSON object: {{{jsonStringify currentParameters}}}
+Here are the current parameters, represented as a JSON object: {{{currentParameters}}}
 
 Based on their request, and the current parameters, generate a new set of game parameters that reflects their desired changes.
 
@@ -59,7 +63,10 @@ const controlGameParametersFlow = ai.defineFlow(
     outputSchema: ControlGameParametersOutputSchema,
   },
   async input => {
-    const {output} = await adjustParametersPrompt(input);
+    const {output} = await adjustParametersPrompt({
+      ...input,
+      currentParameters: JSON.stringify(input.currentParameters, null, 2),
+    });
     return output!;
   }
 );
