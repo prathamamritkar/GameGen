@@ -51,10 +51,10 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
   const generatePreview = () => {
     setIsPreviewLoading(true);
     if (config.template) {
-      const content = createHtmlContentForGame(config);
-      setHtmlContent(content);
+        const content = createHtmlContentForGame(config);
+        setHtmlContent(content);
     } else {
-      setHtmlContent(null);
+        setHtmlContent(null);
     }
     // Simulate build time
     setTimeout(() => setIsPreviewLoading(false), 500); 
@@ -75,7 +75,7 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
 
     try {
         const result = await controlGameParameters({
-            gameType: config.template.name,
+            gameType: config.template.name as any,
             parameterAdjustmentRequest: data.request,
             currentParameters: currentParams,
         });
@@ -150,14 +150,6 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
           Describe how you want to change the gameplay, and see your changes live in the preview.
         </p>
       </div>
-      
-      <div className="mt-8 mb-6">
-        <GamePreview 
-            htmlContent={htmlContent} 
-            isLoading={isPreviewLoading}
-            onRebuild={generatePreview}
-        />
-      </div>
 
       <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -229,6 +221,15 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
             </Card>
         </div>
       </div>
+
+       <div className="mt-12 mb-6">
+        <GamePreview 
+            htmlContent={htmlContent} 
+            isLoading={isPreviewLoading}
+            onRebuild={generatePreview}
+        />
+      </div>
+
        <div className="mt-12 flex justify-between">
           <Button variant="outline" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
           <Button onClick={onNext}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>

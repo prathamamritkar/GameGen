@@ -20,12 +20,8 @@ export default function Step4Export({ config, onBack, onReset }: Step4Props) {
 
   const generatePreview = () => {
     setIsLoading(true);
-    if (config.template && config.assets) {
-      const content = createHtmlContentForGame(config);
-      setHtmlContent(content);
-    } else {
-      setHtmlContent(null);
-    }
+    const content = createHtmlContentForGame(config);
+    setHtmlContent(content);
     // Simulate build time
     setTimeout(() => setIsLoading(false), 500);
   };
@@ -51,14 +47,6 @@ export default function Step4Export({ config, onBack, onReset }: Step4Props) {
         Preview your final game below, or download it and play it anywhere, anytime.
       </p>
 
-      <div className="mt-8 mb-6">
-        <GamePreview 
-            htmlContent={htmlContent} 
-            isLoading={isLoading}
-            onRebuild={generatePreview}
-        />
-      </div>
-      
       <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
         <Button size="lg" onClick={handleExport} disabled={!htmlContent || isLoading}>
             <Download className="mr-2 h-5 w-5" /> Export as HTML
@@ -68,6 +56,14 @@ export default function Step4Export({ config, onBack, onReset }: Step4Props) {
         </Button>
       </div>
 
+       <div className="mt-8 mb-6">
+        <GamePreview 
+            htmlContent={htmlContent} 
+            isLoading={isLoading}
+            onRebuild={generatePreview}
+        />
+      </div>
+      
        <div className="mt-8 flex justify-center">
         <Button variant="ghost" onClick={onBack}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Parameters
