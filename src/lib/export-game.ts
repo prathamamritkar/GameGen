@@ -117,7 +117,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                   }
                   
                   frameCount++;
-                  if (frameCount % (Math.floor(150 / gameParams.pipeSpeed)) === 0) {
+                  if (frameCount % Math.floor(150 / gameParams.pipeSpeed) === 0) {
                     const pipeY = Math.random() * (canvas.height - gameParams.pipeGap - 100) + 50;
                     pipes.push({ x: canvas.width, y: pipeY, passed: false });
                   }
@@ -139,7 +139,11 @@ export function createHtmlContentForGame(config: GameConfig): string {
                   });
                   
                   drawScore();
-                  requestAnimationFrame(gameLoop);
+                  if (!gameOver) {
+                    requestAnimationFrame(gameLoop);
+                  } else {
+                    drawGameOver();
+                  }
                 }
                 break;
               }
@@ -149,11 +153,9 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 let runnerFrame = 0;
 
                 window.runnerJump = function() {
-                    if (gameOver || !gameStarted) return;
-                    if (player.onGround) {
-                        player.velocityY = -20;
-                        player.onGround = false;
-                    }
+                    if (gameOver || !gameStarted || !player.onGround) return;
+                    player.velocityY = -20;
+                    player.onGround = false;
                 }
                 
                 gameLoop = function() {
@@ -200,7 +202,11 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     });
                     
                     drawScore();
-                    requestAnimationFrame(gameLoop);
+                    if (!gameOver) {
+                        requestAnimationFrame(gameLoop);
+                    } else {
+                        drawGameOver();
+                    }
                 }
                 break;
               }
@@ -290,7 +296,11 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     ctx.fillText('Time: ' + Math.ceil(timeLeft), canvas.width - 10, 30);
                     
                     drawScore();
-                    requestAnimationFrame(gameLoop);
+                    if (!gameOver) {
+                        requestAnimationFrame(gameLoop);
+                    } else {
+                        drawGameOver();
+                    }
                 }
                 break;
               }
@@ -446,7 +456,11 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     if(gameOver) { drawGameOver(); return; }
                     drawGrid();
                     drawScore();
-                    requestAnimationFrame(gameLoop);
+                    if (!gameOver) {
+                        requestAnimationFrame(gameLoop);
+                    } else {
+                        drawGameOver();
+                    }
                 }
 
                 createGrid();
@@ -550,7 +564,11 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     }
 
                     drawScore();
-                    requestAnimationFrame(gameLoop);
+                    if (!gameOver) {
+                        requestAnimationFrame(gameLoop);
+                    } else {
+                        drawGameOver();
+                    }
                 }
 
                 window.movePlayer = function(dir) {
@@ -589,6 +607,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 canvas.addEventListener('mousedown', window.jump);
                 canvas.addEventListener('touchstart', (e) => { e.preventDefault(); window.jump(); });
                 document.addEventListener('keydown', (e) => { if (e.code === 'Space') window.jump(); });
+                window.jump(); // Initial jump to start
             } else if (gameType === 'speed-runner') {
                 canvas.addEventListener('mousedown', window.runnerJump);
                 canvas.addEventListener('touchstart', (e) => { e.preventDefault(); window.runnerJump(); }, { passive: false });
@@ -697,10 +716,3 @@ export function exportGameAsHtml(htmlContent: string, config: GameConfig) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-
-
-
-
-
-
-
