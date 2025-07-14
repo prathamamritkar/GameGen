@@ -34,6 +34,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
     let score = 0;
     let gameOver = false;
     let musicStarted = false;
+    let gameStarted = false;
 
     function startMusic() {
         if (bgm && !musicStarted) {
@@ -41,14 +42,22 @@ export function createHtmlContentForGame(config: GameConfig): string {
             musicStarted = true;
         }
     }
-
-    function drawTitle() {
-      ctx.fillStyle = 'white';
-      ctx.font = '30px "Space Grotesk", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(document.title, canvas.width / 2, 40);
-    }
     
+    function initialScreen() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'white';
+        ctx.font = '40px "Space Grotesk", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(document.title.replace('GameGen - ',''), canvas.width / 2, canvas.height / 2 - 20);
+        ctx.font = '20px "Space Grotesk", sans-serif';
+        ctx.fillText('Tap or press Space to start', canvas.width / 2, canvas.height / 2 + 20);
+        if (!gameStarted) {
+            requestAnimationFrame(initialScreen);
+        }
+    }
+
     function drawScore() {
         ctx.fillStyle = 'white';
         ctx.font = '24px "Space Grotesk", sans-serif';
@@ -100,7 +109,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
           frameCount++;
           if (frameCount % (Math.floor(150 / gameParams.pipeSpeed)) === 0) {
             const pipeY = Math.random() * (canvas.height - gameParams.pipeGap - 100) + 50;
-            pipes.push({ x: canvas.width, y: pipeY });
+            pipes.push({ x: canvas.width, y: pipeY, passed: false });
           }
           
           pipes.forEach((p, i) => {
@@ -165,7 +174,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
               ctx.fillRect(player.x, player.y, player.width, player.height);
             }
 
-            if(runnerFrame % Math.floor(100 / gameParams.playerSpeed / (gameParams.obstacleFrequency * 100)) === 0) {
+            if(runnerFrame > 50 && runnerFrame % Math.floor(100 / (gameParams.playerSpeed * gameParams.obstacleFrequency)) === 0) {
                 obstacles.push({x: canvas.width, width: 30, height: 30});
             }
 
@@ -220,8 +229,8 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 ctx.fill();
 
                 if (hole.timer > 0) {
-                   hole.timer -= 16;
-                } else {
+                   hole.timer -= 16; // approx 1 frame
+                } else if (hole.visible) {
                     hole.visible = false;
                 }
                 
@@ -251,7 +260,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
             requestAnimationFrame(whackLoop);
         }
         
-        let timerInterval = setInterval(() => { if (!gameOver) timeLeft--; if(timeLeft <= 0) { gameOver = true; clearInterval(timerInterval); } }, 1000);
+        let timerInterval = setInterval(() => { if (!gameOver && gameStarted) { timeLeft--; if(timeLeft <= 0) { timeLeft = 0; gameOver = true; clearInterval(timerInterval); } } }, 1000);
 
         canvas.addEventListener('mousedown', (e) => {
             const rect = canvas.getBoundingClientRect();
@@ -337,16 +346,16 @@ export function createHtmlContentForGame(config: GameConfig): string {
         break;
 
       case 'crossy-road':
-        let crossyPlayer = { x: canvas.width / 2, y: canvas.height - 40, width: 30, height: 30 };
+        let crossyPlayer = { x: canvas.width / 2 - 15, y: canvas.height - 40, width: 30, height: 30 };
+        const laneHeight = canvas.height / (gameParams.lanes + 2);
         let lanes = [];
-        const laneHeight = canvas.height / (gameParams.lanes + 1);
 
         for (let i = 0; i < gameParams.lanes; i++) {
             const type = Math.random() > 0.5 ? 'traffic' : 'log';
             lanes.push({
-                y: i * laneHeight + laneHeight,
+                y: (i + 1) * laneHeight,
                 type: type,
-                speed: (type === 'traffic' ? gameParams.trafficSpeed : gameParams.logSpeed) * (Math.random() > 0.5 ? 1 : -1),
+                speed: (type === 'traffic' ? gameParams.trafficSpeed : gameParams.logSpeed) * (Math.random() > 0.5 ? 1 : -1) * (0.5 + Math.random()),
                 items: [{x: Math.random() * canvas.width, width: 80}]
             });
         }
@@ -355,39 +364,47 @@ export function createHtmlContentForGame(config: GameConfig): string {
             if(gameOver) { drawGameOver(); return; }
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            ctx.fillStyle = '#4CAF50'; // Safe zone
-            ctx.fillRect(0, canvas.height - laneHeight, canvas.width, laneHeight);
+            ctx.fillStyle = '#4CAF50'; // Safe zones
             ctx.fillRect(0, 0, canvas.width, laneHeight);
+            ctx.fillRect(0, canvas.height - laneHeight, canvas.width, laneHeight);
 
-            lanes.forEach(lane => {
+            let onLog = false;
+            let currentLaneIndex = -1;
+
+            lanes.forEach((lane, index) => {
                 ctx.fillStyle = lane.type === 'traffic' ? '#555' : '#1E90FF';
-                ctx.fillRect(0, lane.y - laneHeight / 2, canvas.width, lane.height);
+                ctx.fillRect(0, lane.y, canvas.width, lane.height);
                 
-                let onLog = false;
+                if (crossyPlayer.y >= lane.y && crossyPlayer.y < lane.y + laneHeight) {
+                    currentLaneIndex = index;
+                }
+
                 lane.items.forEach(item => {
                     item.x += lane.speed;
-                    if(lane.speed > 0 && item.x > canvas.width + item.width) item.x = -item.width;
+                    if(lane.speed > 0 && item.x > canvas.width) item.x = -item.width;
                     if(lane.speed < 0 && item.x < -item.width) item.x = canvas.width;
                     
                     ctx.fillStyle = lane.type === 'traffic' ? 'yellow' : '#8B4513';
-                    ctx.fillRect(item.x, lane.y - 15, item.width, 30);
+                    ctx.fillRect(item.x, lane.y + laneHeight / 2 - 15, item.width, 30);
                     
-                    if (crossyPlayer.y > lane.y - laneHeight / 2 && crossyPlayer.y < lane.y + laneHeight / 2) {
-                        if (crossyPlayer.x < item.x + item.width && crossyPlayer.x + crossyPlayer.width > item.x) {
-                           if (lane.type === 'traffic') gameOver = true;
-                           if (lane.type === 'log') onLog = true;
-                        }
+                    if (currentLaneIndex === index && crossyPlayer.x < item.x + item.width && crossyPlayer.x + crossyPlayer.width > item.x) {
+                        if (lane.type === 'traffic') gameOver = true;
+                        if (lane.type === 'log') onLog = true;
                     }
                 });
-                
-                if (lane.type === 'log' && crossyPlayer.y > lane.y - laneHeight / 2 && crossyPlayer.y < lane.y + laneHeight / 2) {
+            });
+            
+            if (currentLaneIndex !== -1) {
+                const currentLane = lanes[currentLaneIndex];
+                if (currentLane.type === 'log') {
                     if (onLog) {
-                       crossyPlayer.x += lane.speed;
+                        crossyPlayer.x += currentLane.speed;
                     } else {
-                       gameOver = true;
+                        gameOver = true; // Fell in water
                     }
                 }
-            });
+            }
+
 
             if (mainCharElement.complete && mainCharElement.naturalHeight !== 0) {
               ctx.drawImage(mainCharElement, crossyPlayer.x, crossyPlayer.y, crossyPlayer.width, crossyPlayer.height);
@@ -398,7 +415,8 @@ export function createHtmlContentForGame(config: GameConfig): string {
             
             if(crossyPlayer.y < laneHeight && !gameOver) {
                 score++;
-                crossyPlayer.y = canvas.height - 40; // Reset
+                crossyPlayer.y = canvas.height - 40; // Reset to start
+                crossyPlayer.x = canvas.width / 2 - 15;
             }
 
             drawScore();
@@ -417,10 +435,10 @@ export function createHtmlContentForGame(config: GameConfig): string {
         }
 
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'ArrowUp') movePlayer('up');
-            if (e.code === 'ArrowDown') movePlayer('down');
-            if (e.code === 'ArrowLeft') movePlayer('left');
-            if (e.code === 'ArrowRight') movePlayer('right');
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+                e.preventDefault();
+                movePlayer(e.code.replace('Arrow', '').toLowerCase());
+            }
         });
         
         let touchStartX = 0;
@@ -449,30 +467,39 @@ export function createHtmlContentForGame(config: GameConfig): string {
         break;
 
       default:
-        let x = 50;
-        let y = canvas.height / 2;
         gameLoop = function() {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
-          x = (x + 2) % (canvas.width - 50);
-          if (mainCharElement && mainCharElement.complete && mainCharElement.naturalHeight !== 0) {
-            ctx.drawImage(mainCharElement, x, y, 50, 50);
-          } else {
-            ctx.fillStyle = 'orange';
-            ctx.fillRect(x, y, 50, 50);
-          }
-          drawTitle();
-          requestAnimationFrame(gameLoop);
+          ctx.fillStyle = 'red';
+          ctx.font = '20px sans-serif';
+          ctx.fillText('Error: Unknown game type "' + gameType + '"', 10, 50);
         };
     }
 
-    function startGame() {
-      if (gameLoop) {
-        gameLoop();
-      }
-    };
+    function handleFirstInput() {
+        if (!gameStarted) {
+            gameStarted = true;
+            if (gameLoop) {
+                gameLoop();
+            }
+            // Remove this listener so it doesn't interfere with game-specific controls
+            document.removeEventListener('keydown', handleFirstInputKey);
+            canvas.removeEventListener('mousedown', handleFirstInput);
+            canvas.removeEventListener('touchstart', handleFirstInput);
+        }
+    }
+    
+    function handleFirstInputKey(e) {
+        if (e.code === 'Space') {
+            handleFirstInput();
+        }
+    }
+
+    document.addEventListener('keydown', handleFirstInputKey);
+    canvas.addEventListener('mousedown', handleFirstInput);
+    canvas.addEventListener('touchstart', handleFirstInput);
     
     // Using requestAnimationFrame to ensure the canvas is ready for drawing
-    requestAnimationFrame(startGame);
+    requestAnimationFrame(initialScreen);
   `;
 
   return `
