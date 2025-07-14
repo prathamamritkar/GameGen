@@ -4,7 +4,7 @@ import GameCard from './GameCard';
 
 interface Step1Props {
   onNext: () => void;
-  onUpdateConfig: (config: Partial<GameGameConfig>) => void;
+  onUpdateConfig: (config: Partial<GameConfig>) => void;
 }
 
 export default function Step1TemplateSelection({ onNext, onUpdateConfig }: Step1Props) {

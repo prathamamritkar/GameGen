@@ -111,13 +111,21 @@ const reskinGameAssetsFlow = ai.defineFlow(
       },
     });
 
-    const [mainCharacterResult, environmentResult] = await Promise.all([mainCharacterImagePromise, environmentImagePromise]);
+    const npcsImagePromise = ai.generate({
+        prompt: `${imageGenPrompt}, generate an image of an NPC, whose description is: ${input.npcs}`,
+        model: 'googleai/gemini-2.0-flash-preview-image-generation',
+        config: {
+            responseModalities: ['TEXT', 'IMAGE'],
+        },
+    });
+
+    const [mainCharacterResult, environmentResult, npcsResult] = await Promise.all([mainCharacterImagePromise, environmentImagePromise, npcsImagePromise]);
 
     return {
       newAssetsDescription: descriptionOutput.newAssetsDescription,
       newMainCharacterImage: mainCharacterResult.media?.url ?? '',
       newEnvironmentImage: environmentResult.media?.url ?? '',
-      newNpcImages: [],
+      newNpcImages: npcsResult.media?.url ? [npcsResult.media.url] : [],
     };
   }
 );
