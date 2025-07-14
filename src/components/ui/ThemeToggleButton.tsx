@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -8,11 +9,11 @@ import { cn } from "@/lib/utils";
 
 export function ThemeToggleButton() {
   const { theme, setTheme } = useTheme();
-  const [currentIcon, setCurrentIcon] = React.useState(theme);
+  const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
-    setCurrentIcon(theme);
-  }, [theme]);
+    setMounted(true);
+  }, []);
 
   const themes = ["light", "dark", "system"];
   
@@ -48,12 +49,17 @@ export function ThemeToggleButton() {
           "transform-gpu group-hover:scale-110"
         )}
       >
-        <div
-          key={currentIcon}
-          className="animate-in fade-in-0 zoom-in-90 rotate-0"
-        >
-          {getIcon(currentIcon)}
-        </div>
+        {mounted ? (
+          <div
+            key={theme}
+            className="animate-in fade-in-0 zoom-in-90 rotate-0"
+          >
+            {getIcon(theme)}
+          </div>
+        ) : (
+          // Render a placeholder or default icon on the server
+          getIcon("system")
+        )}
       </div>
        <div
         className="absolute inset-0 scale-0 rounded-full bg-primary/30 opacity-0 transition-all duration-300 ease-in-out group-active:scale-100 group-active:opacity-100"
