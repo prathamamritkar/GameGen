@@ -50,7 +50,7 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
 
   const generatePreview = () => {
     setIsPreviewLoading(true);
-    if (config.template && config.assets) {
+    if (config.template) {
       const content = createHtmlContentForGame(config);
       setHtmlContent(content);
     } else {
@@ -179,11 +179,11 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
                 />
                 {errors.request && <p className="text-sm text-destructive mt-1">{errors.request.message}</p>}
               </div>
-              <div className="flex flex-col sm:flex-row sm:justify-start sm:gap-4 gap-3">
+              <div className="flex w-full gap-4">
                   <Button 
                       type="submit" 
                       disabled={isLoading} 
-                      className="w-full sm:w-auto sm:min-w-[220px]"
+                      className="w-3/4"
                   >
                       {isGeneratingParams ? <LoadingIndicator text="Adjusting..." /> : 'Generate New Parameters'}
                   </Button>
@@ -192,9 +192,9 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
                       variant="outline"
                       onClick={handleAutofill} 
                       disabled={isLoading} 
-                      className="w-full sm:w-auto sm:min-w-[150px] border-primary text-primary hover:border-accent hover:text-accent-foreground"
+                      className="w-1/4 border-primary text-primary hover:border-accent hover:text-accent-foreground"
                   >
-                      {isAutofilling ? <LoadingIndicator text="Autofilling..."/> : <><Sparkles className="mr-2 h-4 w-4"/> AI Autofill</>}
+                      {isAutofilling ? <LoadingIndicator text="Autofilling..."/> : <><Sparkles className="mr-2 h-4 w-4"/>AI Autofill</>}
                   </Button>
               </div>
             </CardContent>

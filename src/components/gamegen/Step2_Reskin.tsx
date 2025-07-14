@@ -36,9 +36,9 @@ const reskinSchema = z.object({
   npcs: z.string().min(3, 'Describe the NPCs.'),
   mainCharacter: z.string().min(3, 'Describe the main character.'),
   difficulty: z.object({
-    easy: z.string().min(1, "Easy description is required."),
-    medium: z.string().min(1, "Medium description is required."),
-    hard: z.string().min(1, "Hard description is required."),
+    easy: z.string().optional(),
+    medium: z.string().optional(),
+    hard: z.string().optional(),
   }),
   musicTheme: z.string().min(3, 'Music theme is required.'),
   musicDuration: z.number().min(5).max(60),
@@ -90,7 +90,11 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
       mainCharacter: data.mainCharacter,
     };
     
-    const difficulty: Difficulty = data.difficulty;
+    const difficulty: Difficulty = {
+        easy: data.difficulty.easy || 'Slower speed, fewer obstacles.',
+        medium: data.difficulty.medium || 'Normal speed and obstacles.',
+        hard: data.difficulty.hard || 'Faster speed, many obstacles.',
+    };
 
     onUpdateConfig({ reskinInput, difficulty });
 
@@ -314,11 +318,11 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
                     </CardContent>
                 </Card>
                 
-                <div className="flex flex-col sm:flex-row sm:justify-start sm:gap-4 gap-3">
+                <div className="flex w-full gap-4">
                     <Button 
                         type="submit" 
                         disabled={isGenerating || isAutofilling} 
-                        className="w-full sm:w-auto sm:min-w-[220px]"
+                        className="w-3/4"
                     >
                         {isGenerating ? <LoadingIndicator text="Generating..."/> : <>Generate Assets &amp; Music</>}
                     </Button>
@@ -327,9 +331,9 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
                         variant="outline"
                         onClick={handleAutofill} 
                         disabled={isAutofilling || isGenerating} 
-                        className="w-full sm:w-auto sm:min-w-[150px] border-primary text-primary hover:border-accent hover:text-accent-foreground"
+                        className="w-1/4 border-primary text-primary hover:border-accent hover:text-accent-foreground"
                     >
-                        {isAutofilling ? <LoadingIndicator text="Autofilling..."/> : <><Sparkles className="mr-2 h-4 w-4"/> AI Autofill</>}
+                        {isAutofilling ? <LoadingIndicator text="Autofilling..."/> : <><Sparkles className="mr-2 h-4 w-4"/>AI Autofill</>}
                     </Button>
                 </div>
             </form>
