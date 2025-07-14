@@ -110,7 +110,12 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
         duration: data.musicDuration,
       }).catch(err => {
         console.error("Music generation failed, proceeding without music.", err);
-        toast({ title: "Music Generation Failed", description: "Rate limit hit for audio generation. Visuals were created, but music was skipped.", variant: "destructive" });
+        const errorMessage = (err.message || '').toLowerCase();
+        if (errorMessage.includes('429') || errorMessage.includes('quota')) {
+             toast({ title: "Music Generation Skipped", description: "You've hit the daily rate limit for audio generation. Visuals were still created.", variant: "destructive" });
+        } else {
+            toast({ title: "Music Generation Failed", description: "An unexpected error occurred while creating audio. Visuals were created, but music was skipped.", variant: "destructive" });
+        }
         return null; // Return null if music generation fails
       });
 
@@ -203,9 +208,14 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
             toast({ title: "All fields are already filled!", description: "AI didn't find any blanks to fill." });
         }
 
-    } catch(error) {
+    } catch(error: any) {
         console.error('AI autofill failed:', error);
-        toast({ title: "Autofill Failed", description: "The AI failed to generate suggestions. Please try again.", variant: "destructive" });
+        const errorMessage = (error.message || '').toLowerCase();
+        if (errorMessage.includes('429') || errorMessage.includes('quota')) {
+          toast({ title: "Autofill Rate Limit Hit", description: "You've exceeded the daily quota for AI suggestions.", variant: "destructive" });
+        } else {
+          toast({ title: "Autofill Failed", description: "The AI failed to generate suggestions. Please try again.", variant: "destructive" });
+        }
     } finally {
         setIsAutofilling(false);
     }
