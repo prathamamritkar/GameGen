@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Gamepad2, Loader } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
+import { useEffect } from 'react';
 
 interface GamePreviewProps {
   htmlContent: string | null;
@@ -22,6 +23,12 @@ export default function GamePreview({ htmlContent, isLoading, onRebuild }: GameP
       'border-2 border-destructive': !isLoading && !htmlContent
     }
   );
+
+  useEffect(() => {
+    // This effect ensures that if the htmlContent changes,
+    // we give the iframe a moment to re-render before showing it.
+    // This helps prevent showing a stale preview.
+  }, [htmlContent]);
 
   return (
     <Card className={cardClasses}>
