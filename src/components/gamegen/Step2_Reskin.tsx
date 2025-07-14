@@ -56,6 +56,13 @@ const fallbackValues = {
   musicTheme: "Upbeat and whimsical synth-pop",
 };
 
+const fallbackAssets: Assets = {
+    newAssetsDescription: "A default set of assets for a Cosmic Kitten Adventure game, used as a fallback.",
+    newMainCharacterImage: "https://placehold.co/512x512.png",
+    newEnvironmentImage: "https://placehold.co/800x450.png",
+    newNpcImages: ["https://placehold.co/512x512.png"],
+};
+
 export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: Step2Props) {
   const { toast, dismiss } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -122,7 +129,7 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
         console.error("Music generation failed, proceeding without music.", err);
         const errorMessage = (err.message || '').toLowerCase();
         if (errorMessage.includes('429') || errorMessage.includes('quota')) {
-             toast({ title: "Music Generation Skipped", description: "You've hit the daily rate limit for audio generation. Visuals were still created.", variant: "destructive" });
+             toast({ title: "Music Quota Reached", description: "Visuals will be created, but music was skipped.", variant: "destructive" });
         } else {
             toast({ title: "Music Generation Failed", description: "An unexpected error occurred while creating audio. Visuals were created, but music was skipped.", variant: "destructive" });
         }
@@ -152,9 +159,24 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
 
       toast({ title: "Success!", description: "Your game has been customized." });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('AI generation failed:', error);
-        toast({ title: "Generation Failed", description: "The AI failed to generate assets. Please try again.", variant: "destructive" });
+        const errorMessage = (error.message || '').toLowerCase();
+        if (errorMessage.includes('429') || errorMessage.includes('quota')) {
+          toast({
+            title: "AI Quota Reached",
+            description: "Used fallback placeholder assets instead.",
+            variant: "destructive",
+          });
+          setGeneratedAssets(fallbackAssets);
+          onUpdateConfig({ assets: fallbackAssets, music: undefined });
+        } else {
+          toast({
+            title: "Generation Failed",
+            description: "The AI failed to generate assets. Please try again.",
+            variant: "destructive",
+          });
+        }
     } finally {
         setIsGenerating(false);
     }
@@ -392,21 +414,21 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
                                 <div>
                                     <h3 className="font-bold text-lg">Main Character</h3>
                                     <div className="relative w-full aspect-square rounded-lg overflow-hidden border bg-muted mt-2">
-                                        <Image src={generatedAssets.newMainCharacterImage} alt="Generated Main Character" fill className="object-contain p-2" />
+                                        <Image src={generatedAssets.newMainCharacterImage} alt="Generated Main Character" fill className="object-contain p-2" data-ai-hint="kitten astronaut" />
                                     </div>
                                 </div>
                                  <div>
                                     <h3 className="font-bold text-lg">NPCs / Obstacles</h3>
                                     <div className="relative w-full aspect-square rounded-lg overflow-hidden border bg-muted mt-2">
                                         {generatedAssets.newNpcImages.length > 0 ? (
-                                             <Image src={generatedAssets.newNpcImages[0]} alt="Generated NPCs" fill className="object-contain p-2" />
+                                             <Image src={generatedAssets.newNpcImages[0]} alt="Generated NPCs" fill className="object-contain p-2" data-ai-hint="dog ufo" />
                                         ) : <p className="text-muted-foreground p-4">No NPC image generated.</p>}
                                     </div>
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-lg">Environment</h3>
                                     <div className="relative w-full aspect-video rounded-lg overflow-hidden border bg-muted mt-2">
-                                        <Image src={generatedAssets.newEnvironmentImage} alt="Generated Environment" fill className="object-cover" />
+                                        <Image src={generatedAssets.newEnvironmentImage} alt="Generated Environment" fill className="object-cover" data-ai-hint="space nebula" />
                                     </div>
                                 </div>
                             </div>
