@@ -21,6 +21,7 @@ import LoadingIndicator from './LoadingIndicator';
 import { ArrowLeft, ArrowRight, Wand2, Music as MusicIcon, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { getFallbackAssetsForTemplate } from './FallbackAssets';
 
 interface Step2Props {
   config: GameConfig;
@@ -147,7 +148,7 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
         console.error('AI generation failed:', error);
         const errorMessage = (error.message || '').toLowerCase();
         if (errorMessage.includes('429') || errorMessage.includes('quota')) {
-          const fallbackAssets = getFallbackDataForTemplate(config.template?.id).assets;
+          const fallbackAssets = getFallbackAssetsForTemplate(config.template?.id);
           toast({
             title: "AI Quota Reached",
             description: "Used fallback placeholder assets instead.",
@@ -402,21 +403,21 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
                                 <div>
                                     <h3 className="font-bold text-lg">Main Character</h3>
                                     <div className="relative w-full aspect-square rounded-lg overflow-hidden border bg-muted mt-2">
-                                        <Image src={generatedAssets.newMainCharacterImage} alt="Generated Main Character" fill className="object-contain p-2" data-ai-hint={generatedAssets.dataAiHint?.mainCharacter} />
+                                        <Image src={generatedAssets.newMainCharacterImage} alt="Generated Main Character" fill className="object-contain p-2" />
                                     </div>
                                 </div>
                                  <div>
                                     <h3 className="font-bold text-lg">NPCs / Obstacles</h3>
                                     <div className="relative w-full aspect-square rounded-lg overflow-hidden border bg-muted mt-2">
                                         {generatedAssets.newNpcImages.length > 0 ? (
-                                             <Image src={generatedAssets.newNpcImages[0]} alt="Generated NPCs" fill className="object-contain p-2" data-ai-hint={generatedAssets.dataAiHint?.npc} />
+                                             <Image src={generatedAssets.newNpcImages[0]} alt="Generated NPCs" fill className="object-contain p-2" />
                                         ) : <p className="text-muted-foreground p-4">No NPC image generated.</p>}
                                     </div>
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-lg">Environment</h3>
                                     <div className="relative w-full aspect-video rounded-lg overflow-hidden border bg-muted mt-2">
-                                        <Image src={generatedAssets.newEnvironmentImage} alt="Generated Environment" fill className="object-cover" data-ai-hint={generatedAssets.dataAiHint?.environment} />
+                                        <Image src={generatedAssets.newEnvironmentImage} alt="Generated Environment" fill className="object-cover" />
                                     </div>
                                 </div>
                             </div>

@@ -3,7 +3,6 @@ import type { Assets, GameTemplateId, ReskinInput } from "./types";
 type FallbackData = {
     reskinForm: Omit<ReskinInput, 'difficulty'> & { musicTheme: string };
     parameterRequest: string;
-    assets: Assets;
 }
 
 const fallbackStore: Record<GameTemplateId, FallbackData> = {
@@ -18,13 +17,6 @@ const fallbackStore: Record<GameTemplateId, FallbackData> = {
             musicTheme: "Bubbly and suspenseful underwater ambiance.",
         },
         parameterRequest: "Make the submarine sink faster but give it a stronger boost to compensate.",
-        assets: {
-            newAssetsDescription: "A default set of assets for a Subaquatic Goldfish game.",
-            newMainCharacterImage: "https://placehold.co/512x512.png",
-            newEnvironmentImage: "https://placehold.co/800x450.png",
-            newNpcImages: ["https://placehold.co/512x512.png"],
-            dataAiHint: { mainCharacter: 'goldfish submarine', npc: 'pufferfish', environment: 'underwater cave' }
-        },
     },
     'speed-runner': {
         reskinForm: {
@@ -37,13 +29,6 @@ const fallbackStore: Record<GameTemplateId, FallbackData> = {
             musicTheme: "High-energy retro synthwave track.",
         },
         parameterRequest: "Increase the running speed significantly and make obstacles appear more frequently for a real challenge.",
-        assets: {
-            newAssetsDescription: "A default set of assets for a Cyber-Corgi Courier game.",
-            newMainCharacterImage: "https://placehold.co/512x512.png",
-            newEnvironmentImage: "https://placehold.co/800x450.png",
-            newNpcImages: ["https://placehold.co/512x512.png"],
-            dataAiHint: { mainCharacter: 'cyber corgi', npc: 'security drone', environment: 'cyberpunk city' }
-        },
     },
     'whack-a-mole': {
         reskinForm: {
@@ -56,13 +41,6 @@ const fallbackStore: Record<GameTemplateId, FallbackData> = {
             musicTheme: "Eerie but playful Halloween-style music.",
         },
         parameterRequest: "Let the ghosts appear for a shorter amount of time but give me more time overall to get a high score.",
-        assets: {
-            newAssetsDescription: "A default set of assets for a Ghost Zapper 3000 game.",
-            newMainCharacterImage: "https://placehold.co/512x512.png", // Player's zapper
-            newEnvironmentImage: "https://placehold.co/800x450.png",
-            newNpcImages: ["https://placehold.co/512x512.png"], // Ghosts
-            dataAiHint: { mainCharacter: 'ray gun', npc: 'cartoon ghost', environment: 'haunted mansion' }
-        },
     },
     'match-3': {
         reskinForm: {
@@ -75,13 +53,6 @@ const fallbackStore: Record<GameTemplateId, FallbackData> = {
             musicTheme: "Mystical and magical fantasy theme.",
         },
         parameterRequest: "Add another ingredient color to make it harder, but give me a bit more time to think.",
-        assets: {
-            newAssetsDescription: "A default set of assets for an Alchemist's Apprentice game.",
-            newMainCharacterImage: "https://placehold.co/512x512.png", // Potion bottle icon
-            newEnvironmentImage: "https://placehold.co/800x450.png",
-            newNpcImages: ["https://placehold.co/512x512.png"], // Another potion icon
-            dataAiHint: { mainCharacter: 'potion bottle', npc: 'magic book', environment: 'wizard workshop' }
-        },
     },
     'crossy-road': {
         reskinForm: {
@@ -94,13 +65,6 @@ const fallbackStore: Record<GameTemplateId, FallbackData> = {
             musicTheme: "Upbeat medieval chiptune music.",
         },
         parameterRequest: "Make the carts move much faster and have more lanes to cross.",
-        assets: {
-            newAssetsDescription: "A default set of assets for a Froggy Kingdom Crossing game.",
-            newMainCharacterImage: "https://placehold.co/512x512.png",
-            newEnvironmentImage: "https://placehold.co/800x450.png",
-            newNpcImages: ["https://placehold.co/512x512.png"], // a cart
-            dataAiHint: { mainCharacter: 'pixel frog', npc: 'wooden cart', environment: 'pixel castle' }
-        },
     }
 }
 
