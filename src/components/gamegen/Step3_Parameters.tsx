@@ -9,9 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { controlGameParameters } from '@/ai/flows/control-game-parameters';
+import { autofillParametersBlanks } from '@/ai/flows/autofill-parameters-blanks';
 import type { GameConfig, Parameters } from '@/lib/types';
 import LoadingIndicator from './LoadingIndicator';
-import { ArrowLeft, ArrowRight, SlidersHorizontal } from 'lucide-react';
+import { ArrowLeft, ArrowRight, SlidersHorizontal, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Step3Props {
@@ -28,12 +29,13 @@ const paramSchema = z.object({
 type ParamFormData = z.infer<typeof paramSchema>;
 
 export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig }: Step3Props) {
-  const { toast } = useToast();
+  const { toast, dismiss } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isAutofilling, setIsAutofilling] = useState(false);
   
   const currentParams = config.parameters?.adjusted || config.template?.defaultParams;
 
-  const { register, handleSubmit, formState: { errors } } = useForm<ParamFormData>({
+  const { register, handleSubmit, formState: { errors }, getValues, setValue, setFocus } = useForm<ParamFormData>({
     resolver: zodResolver(paramSchema),
     defaultValues: {
       request: config.parameters?.request || '',
@@ -69,6 +71,48 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
     }
   };
 
+  const handleAutofill = async () => {
+    if (!config.template) {
+        toast({ title: "Error", description: "No game template selected.", variant: "destructive" });
+        return;
+    }
+    setIsAutofilling(true);
+    const currentRequest = getValues('request');
+    const previousRequest = currentRequest;
+
+    try {
+        const result = await autofillParametersBlanks({
+            gameTemplate: config.template.name,
+            currentRequest: currentRequest,
+        });
+
+        if (result.filledRequest) {
+            setValue('request', result.filledRequest, { shouldValidate: true, shouldDirty: true });
+            setFocus('request');
+
+            const { id } = toast({
+                title: "Request field filled by AI",
+                description: (
+                    <Button variant="link" className="p-0 h-auto" onClick={() => {
+                        setValue('request', previousRequest, { shouldValidate: true });
+                        dismiss(id);
+                        toast({ title: "Undo successful", description: "Your previous request has been restored." });
+                    }}>Undo</Button>
+                ),
+                duration: 5000,
+            });
+        } else {
+             toast({ title: "Request field is already filled!", description: "AI didn't find any blanks to fill." });
+        }
+
+    } catch(error) {
+        console.error('AI parameter autofill failed:', error);
+        toast({ title: "Autofill Failed", description: "The AI failed to generate a suggestion. Please try again.", variant: "destructive" });
+    } finally {
+        setIsAutofilling(false);
+    }
+  };
+
   return (
     <section>
       <div className="text-center">
@@ -100,9 +144,24 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
                 />
                 {errors.request && <p className="text-sm text-destructive mt-1">{errors.request.message}</p>}
               </div>
-              <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? <LoadingIndicator text="Adjusting..." /> : 'Generate New Parameters'}
-              </Button>
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-4 gap-3">
+                  <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={handleAutofill} 
+                      disabled={isAutofilling || isLoading} 
+                      className="w-full sm:w-auto sm:min-w-[220px] border-primary text-primary hover:border-accent hover:text-accent-foreground"
+                  >
+                      {isAutofilling ? <LoadingIndicator text="Autofilling..."/> : <><Sparkles className="mr-2 h-4 w-4"/> AI Autofill Blanks</>}
+                  </Button>
+                  <Button 
+                      type="submit" 
+                      disabled={isLoading || isAutofilling} 
+                      className="w-full sm:w-auto sm:min-w-[220px]"
+                  >
+                      {isLoading ? <LoadingIndicator text="Adjusting..." /> : 'Generate New Parameters'}
+                  </Button>
+              </div>
             </CardContent>
           </Card>
         </form>

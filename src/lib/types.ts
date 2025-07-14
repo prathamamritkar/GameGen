@@ -76,3 +76,13 @@ export type AutofillReskinBlanksOutput = {
     musicTheme: string;
   };
 };
+
+// Types for the Parameter Autofill flow
+export type AutofillParametersBlanksInput = {
+  gameTemplate: string;
+  currentRequest: string;
+};
+
+export type AutofillParametersBlanksOutput = {
+  filledRequest: string;
+};

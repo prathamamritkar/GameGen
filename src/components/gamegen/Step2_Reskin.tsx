@@ -57,7 +57,7 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
     defaultValues: {
       story: config.reskinInput?.story || '',
       theme: config.reskinInput?.theme || '',
-      artStyle: config.reskinInput?.artStyle || 'Pixel Art',
+      artStyle: config.reskinInput?.artStyle || '',
       environment: config.reskinInput?.environment || '',
       npcs: config.reskinInput?.npcs || '',
       mainCharacter: config.reskinInput?.mainCharacter || '',
@@ -66,7 +66,7 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
         medium: config.reskinInput?.difficultySettings.medium || 'Normal speed and obstacles.',
         hard: config.reskinInput?.difficultySettings.hard || 'Faster speed, many obstacles.',
       },
-      musicTheme: config.music?.theme || 'Upbeat chiptune',
+      musicTheme: config.music?.theme || '',
       musicDuration: config.music?.duration || 30,
     },
   });
