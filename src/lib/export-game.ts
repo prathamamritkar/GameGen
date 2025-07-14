@@ -83,7 +83,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 let frameCount = 0;
 
                 window.jump = function() {
-                    startMusic();
                     if (gameOver) { window.location.reload(); return; }
                     bird.velocityY = gameParams.lift;
                 }
@@ -128,9 +127,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                   drawScore();
                   requestAnimationFrame(gameLoop);
                 }
-                document.addEventListener('keydown', (e) => { if (e.code === 'Space') window.jump(); });
-                canvas.addEventListener('mousedown', window.jump);
-                canvas.addEventListener('touchstart', (e) => { e.preventDefault(); window.jump(); });
                 break;
               }
               case 'speed-runner': {
@@ -139,7 +135,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 let runnerFrame = 0;
 
                 window.runnerJump = function() {
-                    startMusic();
                     if (gameOver) { window.location.reload(); return; }
                     if (player.onGround) {
                         player.velocityY = -20;
@@ -187,9 +182,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     drawScore();
                     requestAnimationFrame(gameLoop);
                 }
-                document.addEventListener('keydown', (e) => { if (e.code === 'Space') window.runnerJump(); });
-                canvas.addEventListener('mousedown', window.runnerJump);
-                canvas.addEventListener('touchstart', (e) => { e.preventDefault(); window.runnerJump(); });
                 break;
               }
               case 'whack-a-mole': {
@@ -202,7 +194,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 let timeLeft = gameParams.gameDuration;
                 
                 window.whackAt = function(x, y) {
-                    startMusic();
                     if (gameOver) { window.location.reload(); return; }
                     holes.forEach(hole => {
                         if (hole.visible && Math.hypot(x - hole.x, y - (hole.y - 20)) < 35) {
@@ -273,20 +264,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 }
                 
                 startTimer();
-
-                function handleWhack(e) {
-                    const rect = canvas.getBoundingClientRect();
-                    window.whackAt(e.clientX - rect.left, e.clientY - rect.top);
-                }
-                function handleTouchWhack(e){
-                    e.preventDefault();
-                    const rect = canvas.getBoundingClientRect();
-                    const touch = e.touches[0];
-                    window.whackAt(touch.clientX - rect.left, touch.clientY - rect.top);
-                }
-                
-                canvas.addEventListener('mousedown', handleWhack);
-                canvas.addEventListener('touchstart', handleTouchWhack);
                 break;
               }
               case 'match-3': {
@@ -330,7 +307,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 function findMatches() { /* Complex logic omitted for brevity */ }
                 
                 window.handleClickOrTap = function(ex, ey) {
-                    startMusic();
                     if (gameOver) { window.location.reload(); return; }
 
                     const rect = canvas.getBoundingClientRect();
@@ -349,13 +325,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                         selected = null;
                     }
                 }
-
-                canvas.addEventListener('mousedown', (e) => window.handleClickOrTap(e.clientX, e.clientY));
-                canvas.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    window.handleClickOrTap(e.touches[0].clientX, e.touches[0].clientY);
-                });
-
                 createGrid();
                 break;
               }
@@ -439,7 +408,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 }
 
                 window.movePlayer = function(dir) {
-                    startMusic();
                     if(gameOver) { window.location.reload(); return; }
                     if(dir === 'up') crossyPlayer.y -= laneHeight;
                     if(dir === 'down') crossyPlayer.y = Math.min(canvas.height - 40, crossyPlayer.y + laneHeight);
@@ -448,35 +416,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     crossyPlayer.y = Math.max(0, Math.min(canvas.height - crossyPlayer.height, crossyPlayer.y));
                     crossyPlayer.x = Math.max(0, Math.min(canvas.width - crossyPlayer.width, crossyPlayer.x));
                 }
-
-                document.addEventListener('keydown', (e) => {
-                    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
-                        e.preventDefault();
-                        window.movePlayer(e.code.replace('Arrow', '').toLowerCase());
-                    }
-                });
-                
-                let touchStartX = 0;
-                let touchStartY = 0;
-                canvas.addEventListener('touchstart', e => {
-                    e.preventDefault();
-                    touchStartX = e.touches[0].clientX;
-                    touchStartY = e.touches[0].clientY;
-                }, { passive: false });
-                canvas.addEventListener('touchend', e => {
-                    e.preventDefault();
-                    const touchEndX = e.changedTouches[0].clientX;
-                    const touchEndY = e.changedTouches[0].clientY;
-                    const deltaX = touchEndX - touchStartX;
-                    const deltaY = touchEndY - touchStartY;
-                    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                        if (deltaX > 0) window.movePlayer('right');
-                        else window.movePlayer('left');
-                    } else {
-                        if (deltaY > 0) window.movePlayer('down');
-                        else window.movePlayer('up');
-                    }
-                }, { passive: false });
                 break;
               }
               default:
@@ -490,37 +429,73 @@ export function createHtmlContentForGame(config: GameConfig): string {
         }
         
         function handleFirstInput(event) {
-            // Check if the event is relevant for starting or if the game has already started
-            if (gameStarted || (event.type === 'keydown' && event.code !== 'Space')) return;
+            if (gameStarted) {
+                if(gameOver) window.location.reload();
+                return;
+            };
 
-            event.preventDefault(); // Prevent default actions like scrolling on touch
+            event.preventDefault(); 
             gameStarted = true;
-
-            // Remove these initial listeners to prevent multiple starts
+            startMusic();
+            
             document.removeEventListener('keydown', handleFirstInput);
             canvas.removeEventListener('mousedown', handleFirstInput);
             canvas.removeEventListener('touchstart', handleFirstInput);
-
-            // Setup game-specific logic and loops
-            setupGameLogic();
             
-            // Start the main game loop
-            if (gameLoop) {
-                requestAnimationFrame(gameLoop);
+            // Set up game-specific event handlers
+            if (gameType === 'flappy-bird') {
+                document.addEventListener('keydown', (e) => { if (e.code === 'Space') window.jump(); });
+                canvas.addEventListener('mousedown', window.jump);
+                canvas.addEventListener('touchstart', (e) => { e.preventDefault(); window.jump(); });
+                window.jump();
+            } else if (gameType === 'speed-runner') {
+                document.addEventListener('keydown', (e) => { if (e.code === 'Space') window.runnerJump(); });
+                canvas.addEventListener('mousedown', window.runnerJump);
+                canvas.addEventListener('touchstart', (e) => { e.preventDefault(); window.runnerJump(); });
+                window.runnerJump();
+            } else if (gameType === 'whack-a-mole') {
+                 canvas.addEventListener('mousedown', (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    window.whackAt(e.clientX - rect.left, e.clientY - rect.top);
+                });
+                canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const rect = canvas.getBoundingClientRect();
+                    const touch = e.touches[0];
+                    window.whackAt(touch.clientX - rect.left, touch.clientY - rect.top);
+                });
+            } else if (gameType === 'match-3') {
+                canvas.addEventListener('mousedown', (e) => window.handleClickOrTap(e.clientX, e.clientY));
+                canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    window.handleClickOrTap(e.touches[0].clientX, e.touches[0].clientY);
+                });
+            } else if (gameType === 'crossy-road') {
+                document.addEventListener('keydown', (e) => {
+                    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+                        e.preventDefault();
+                        window.movePlayer(e.code.replace('Arrow', '').toLowerCase());
+                    }
+                });
+                 let touchStartX = 0, touchStartY = 0;
+                canvas.addEventListener('touchstart', e => { e.preventDefault(); touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; }, { passive: false });
+                canvas.addEventListener('touchend', e => {
+                    e.preventDefault();
+                    const deltaX = e.changedTouches[0].clientX - touchStartX;
+                    const deltaY = e.changedTouches[0].clientY - touchStartY;
+                    if (Math.abs(deltaX) > Math.abs(deltaY)) window.movePlayer(deltaX > 0 ? 'right' : 'left');
+                    else window.movePlayer(deltaY > 0 ? 'down' : 'up');
+                }, { passive: false });
             }
 
-            // Trigger the first action for relevant games
-            if (event.type === 'mousedown' || event.type === 'touchstart' || event.code === 'Space') {
-                 if (typeof window.jump === 'function') window.jump();
-                 if (typeof window.runnerJump === 'function') window.runnerJump();
-            }
+            requestAnimationFrame(gameLoop);
         }
         
+        setupGameLogic();
         document.addEventListener('keydown', handleFirstInput);
         canvas.addEventListener('mousedown', handleFirstInput);
         canvas.addEventListener('touchstart', handleFirstInput, { passive: false });
         
-        // Always draw the initial screen first
         requestAnimationFrame(initialScreen);
     });
   `;
@@ -538,7 +513,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
       <style>
         body { font-family: 'Inter', sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #23272F; color: white; overflow: hidden; touch-action: none; }
         .canvas-container { width: 100%; max-width: 800px; aspect-ratio: 16 / 9; }
-        #game-canvas { border: 2px solid #FFAA5A; background-image: url(${environmentImg}); background-size: cover; background-position: center; image-rendering: pixelated; width: 100%; height: 100%; }
+        #game-canvas { border: 2px solid #FFAA5A; background-image: url(${environmentImg}); background-size: cover; background-position: center; image-rendering: pixelated; width: 100%; height: 100%; cursor: pointer; }
         img { display: none; }
         h1 { display:none; }
       </style>
@@ -574,4 +549,5 @@ export function exportGameAsHtml(htmlContent: string, config: GameConfig) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
 
