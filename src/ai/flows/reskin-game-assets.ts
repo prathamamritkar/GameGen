@@ -93,10 +93,10 @@ const reskinGameAssetsFlow = ai.defineFlow(
         throw new Error("Failed to generate asset descriptions.");
     }
     
-    const imageGenPrompt = `Based on the user's request for a game with a theme of "${input.theme}" and an art style of "${input.artStyle}"`;
+    const imageGenPrompt = `Generate an image for a game with a theme of "${input.theme}" and an art style of "${input.artStyle}".`;
 
     const mainCharacterImagePromise = ai.generate({
-      prompt: `${imageGenPrompt}, generate an image of the main character, whose description is: ${input.mainCharacter}`,
+      prompt: `${imageGenPrompt} The image should be of the main character, described as: "${input.mainCharacter}". The character should be on a transparent background.`,
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
@@ -104,7 +104,7 @@ const reskinGameAssetsFlow = ai.defineFlow(
     });
 
     const environmentImagePromise = ai.generate({
-      prompt: `${imageGenPrompt}, generate an image of the environment, whose description is: ${input.environment}`,
+      prompt: `${imageGenPrompt} The image should be of the game environment, described as: "${input.environment}". This should be a background image.`,
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
@@ -112,7 +112,7 @@ const reskinGameAssetsFlow = ai.defineFlow(
     });
 
     const npcsImagePromise = ai.generate({
-        prompt: `${imageGenPrompt}, generate an image of an NPC, whose description is: ${input.npcs}`,
+        prompt: `${imageGenPrompt} The image should be of the NPCs (Non-Player Characters) or obstacles, described as: "${input.npcs}". The characters or objects should be on a transparent background.`,
         model: 'googleai/gemini-2.0-flash-preview-image-generation',
         config: {
             responseModalities: ['TEXT', 'IMAGE'],

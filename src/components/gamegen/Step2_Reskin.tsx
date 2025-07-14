@@ -173,6 +173,24 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
                             <Label htmlFor="npcs">NPCs / Obstacles</Label>
                             <Input id="npcs" {...register('npcs')} placeholder="e.g., Goombas, ghosts, asteroids" />
                         </div>
+                        
+                        {/* Difficulty Settings */}
+                        <div className="space-y-2 pt-2">
+                            <h4 className="font-medium text-sm">Difficulty Descriptions</h4>
+                            <div>
+                                <Label htmlFor="difficultyEasy">Easy</Label>
+                                <Input id="difficultyEasy" {...register('difficultySettings.easy')} />
+                            </div>
+                             <div>
+                                <Label htmlFor="difficultyMedium">Medium</Label>
+                                <Input id="difficultyMedium" {...register('difficultySettings.medium')} />
+                            </div>
+                             <div>
+                                <Label htmlFor="difficultyHard">Hard</Label>
+                                <Input id="difficultyHard" {...register('difficultySettings.hard')} />
+                            </div>
+                        </div>
+
                     </CardContent>
                 </Card>
 
@@ -232,13 +250,25 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
                         )}
                         {generatedAssets && (
                             <div className="space-y-4">
-                                <h3 className="font-bold text-lg">Main Character</h3>
-                                <div className="relative w-full aspect-square rounded-lg overflow-hidden border bg-muted">
-                                    <Image src={generatedAssets.newMainCharacterImage} alt="Generated Main Character" fill className="object-contain" />
+                                <div>
+                                    <h3 className="font-bold text-lg">Main Character</h3>
+                                    <div className="relative w-full aspect-square rounded-lg overflow-hidden border bg-muted mt-2">
+                                        <Image src={generatedAssets.newMainCharacterImage} alt="Generated Main Character" fill className="object-contain p-2" />
+                                    </div>
                                 </div>
-                                <h3 className="font-bold text-lg">Environment</h3>
-                                 <div className="relative w-full aspect-video rounded-lg overflow-hidden border bg-muted">
-                                    <Image src={generatedAssets.newEnvironmentImage} alt="Generated Environment" fill className="object-cover" />
+                                 <div>
+                                    <h3 className="font-bold text-lg">NPCs / Obstacles</h3>
+                                    <div className="relative w-full aspect-square rounded-lg overflow-hidden border bg-muted mt-2">
+                                        {generatedAssets.newNpcImages.length > 0 ? (
+                                             <Image src={generatedAssets.newNpcImages[0]} alt="Generated NPCs" fill className="object-contain p-2" />
+                                        ) : <p className="text-muted-foreground p-4">No NPC image generated.</p>}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 className="font-bold text-lg">Environment</h3>
+                                    <div className="relative w-full aspect-video rounded-lg overflow-hidden border bg-muted mt-2">
+                                        <Image src={generatedAssets.newEnvironmentImage} alt="Generated Environment" fill className="object-cover" />
+                                    </div>
                                 </div>
                             </div>
                         )}

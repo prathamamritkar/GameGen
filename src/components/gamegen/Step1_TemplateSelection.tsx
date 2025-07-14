@@ -9,7 +9,14 @@ interface Step1Props {
 
 export default function Step1TemplateSelection({ onNext, onUpdateConfig }: Step1Props) {
   const handleSelect = (template: GameTemplate) => {
-    onUpdateConfig({ template });
+    onUpdateConfig({ 
+        template,
+        // Reset subsequent steps when a new template is chosen
+        reskinInput: undefined,
+        assets: undefined,
+        music: undefined,
+        parameters: undefined,
+    });
     onNext();
   };
 
