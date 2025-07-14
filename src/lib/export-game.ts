@@ -91,8 +91,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 let frameCount = 0;
 
                 window.jump = function() {
-                    if (gameOver) return;
-                    if (!gameStarted) return;
+                    if (gameOver || !gameStarted) return;
                     bird.velocityY = gameParams.lift;
                 }
 
@@ -149,8 +148,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 let runnerFrame = 0;
 
                 window.runnerJump = function() {
-                    if (gameOver) return;
-                    if (!gameStarted) return;
+                    if (gameOver || !gameStarted) return;
                     if (player.onGround) {
                         player.velocityY = -20;
                         player.onGround = false;
@@ -214,11 +212,10 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 }
                 let timeLeft = gameParams.gameDuration;
                 
-                window.whackAt = function(x, y) {
-                    if (gameOver) return;
-                    if (!gameStarted) return;
+                window.whackAt = function(ex, ey) {
+                    if (gameOver || !gameStarted) return;
                     holes.forEach(hole => {
-                        if (hole.visible && Math.hypot(x - hole.x, y - (hole.y - 20)) < 35) {
+                        if (hole.visible && Math.hypot(ex - hole.x, ey - (hole.y - 20)) < 35) {
                             score++;
                             hole.visible = false;
                             hole.timer = 0;
@@ -388,14 +385,14 @@ export function createHtmlContentForGame(config: GameConfig): string {
                         await new Promise(res => setTimeout(res, 200));
                         dropGems();
                         fillGems();
+                        drawGrid();
                         await new Promise(res => setTimeout(res, 200));
                     }
                     isSwapping = false;
                 }
 
                 window.handleClickOrTap = function(e) {
-                    if (gameOver || isSwapping) return;
-                    if (!gameStarted) return;
+                    if (gameOver || isSwapping || !gameStarted) return;
                     const rect = canvas.getBoundingClientRect();
                     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -448,7 +445,10 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 }
                 
                 gameLoop = function() {
-                    if(gameOver) { drawGameOver(); return; }
+                    if(gameOver) { 
+                        drawGameOver();
+                        return;
+                    }
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     
                     ctx.fillStyle = '#4CAF50';
@@ -522,8 +522,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 }
 
                 window.movePlayer = function(dir) {
-                    if (gameOver) return;
-                    if (!gameStarted) return;
+                    if (gameOver || !gameStarted) return;
                     if(dir === 'up') crossyPlayer.y -= laneHeight;
                     if(dir === 'down') crossyPlayer.y += laneHeight;
                     if(dir === 'left') crossyPlayer.x -= 30;
@@ -557,15 +556,14 @@ export function createHtmlContentForGame(config: GameConfig): string {
             canvas.removeEventListener('touchstart', handleFirstInput);
             
             if (gameType === 'flappy-bird') {
-                canvas.addEventListener('click', window.jump);
+                canvas.addEventListener('mousedown', window.jump);
                 canvas.addEventListener('touchstart', (e) => { e.preventDefault(); window.jump(); });
                 document.addEventListener('keydown', (e) => { if (e.code === 'Space') window.jump(); });
                 window.jump();
             } else if (gameType === 'speed-runner') {
-                canvas.addEventListener('click', window.runnerJump);
-                canvas.addEventListener('touchstart', (e) => { e.preventDefault(); window.runnerJump(); });
+                canvas.addEventListener('mousedown', window.runnerJump);
+                canvas.addEventListener('touchstart', (e) => { e.preventDefault(); window.runnerJump(); }, { passive: false });
                 document.addEventListener('keydown', (e) => { if (e.code === 'Space') window.runnerJump(); });
-                window.runnerJump();
             } else if (gameType === 'whack-a-mole') {
                  canvas.addEventListener('mousedown', (e) => {
                     const rect = canvas.getBoundingClientRect();
@@ -579,7 +577,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 });
                 window.startTimer();
             } else if (gameType === 'match-3') {
-                canvas.addEventListener('click', (e) => window.handleClickOrTap(e));
+                canvas.addEventListener('mousedown', (e) => window.handleClickOrTap(e));
                 canvas.addEventListener('touchstart', (e) => {
                     e.preventDefault();
                     window.handleClickOrTap(e);
@@ -663,4 +661,5 @@ export function exportGameAsHtml(htmlContent: string, config: GameConfig) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
 
