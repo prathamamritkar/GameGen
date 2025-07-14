@@ -138,7 +138,9 @@ export function createHtmlContentForGame(config: GameConfig): string {
                   });
                   
                   drawScore();
-                  requestAnimationFrame(gameLoop);
+                  if (!gameOver) {
+                    requestAnimationFrame(gameLoop);
+                  }
                 }
                 break;
               }
@@ -549,9 +551,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
         
         function handleFirstInput(event) {
             if (gameStarted) return;
-            if (event.type === 'keydown' && event.code !== 'Space' && gameType !== 'crossy-road') return;
-
-
+            
             event.preventDefault(); 
             gameStarted = true;
             startMusic();
@@ -569,7 +569,8 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 canvas.addEventListener('touchstart', (e) => { e.preventDefault(); window.runnerJump(); }, { passive: false });
                 document.addEventListener('keydown', (e) => { if (e.code === 'Space') window.runnerJump(); });
             } else if (gameType === 'whack-a-mole') {
-                 canvas.addEventListener('mousedown', (e) => {
+                window.startTimer();
+                canvas.addEventListener('mousedown', (e) => {
                     const rect = canvas.getBoundingClientRect();
                     window.whackAt(e.clientX - rect.left, e.clientY - rect.top);
                 });
@@ -579,7 +580,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     const touch = e.touches[0];
                     window.whackAt(touch.clientX - rect.left, touch.clientY - rect.top);
                 });
-                window.startTimer();
             } else if (gameType === 'match-3') {
                 canvas.addEventListener('mousedown', (e) => window.handleClickOrTap(e));
                 canvas.addEventListener('touchstart', (e) => {
@@ -602,6 +602,8 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     if (Math.abs(deltaX) > Math.abs(deltaY)) window.movePlayer(deltaX > 0 ? 'right' : 'left');
                     else window.movePlayer(deltaY > 0 ? 'down' : 'up');
                 }, { passive: false });
+                 canvas.addEventListener('click', () => { if(gameOver) handleRestart() }, { once: false });
+                 canvas.addEventListener('touchstart', () => { if(gameOver) handleRestart() }, { once: false });
             }
 
             requestAnimationFrame(gameLoop);
@@ -665,6 +667,7 @@ export function exportGameAsHtml(htmlContent: string, config: GameConfig) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
 
 
 
