@@ -55,7 +55,3 @@ export const getFallbackAssetsForTemplate = (templateId?: GameTemplateId): Asset
         newNpcImages: [assets.npcs],
     };
 };
-
-    
-
-    

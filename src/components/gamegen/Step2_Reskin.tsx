@@ -441,7 +441,3 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
     </section>
   );
 }
-
-    
-
-    
