@@ -114,7 +114,7 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
         console.error("Music generation failed, proceeding without music.", err);
         const errorMessage = (err.message || '').toLowerCase();
         if (errorMessage.includes('429') || errorMessage.includes('quota')) {
-             toast({ title: "Music Quota Reached", description: "Visuals will be created, but music was skipped.", variant: "destructive" });
+             toast({ title: "Music Quota Reached", description: "Visuals will be created, but music was skipped due to rate limits.", variant: "destructive" });
         } else {
             toast({ title: "Music Generation Failed", description: "An unexpected error occurred while creating audio. Visuals were created, but music was skipped.", variant: "destructive" });
         }
@@ -230,7 +230,7 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
         console.error('AI autofill failed:', error);
         const errorMessage = (error.message || '').toLowerCase();
         if (errorMessage.includes('429') || errorMessage.includes('quota')) {
-          toast({ title: "AI Quota Reached", description: "Used a fallback theme instead.", variant: "destructive" });
+          toast({ title: "AI Quota Reached", description: "Used a fallback theme instead. Your existing input was preserved.", variant: "destructive" });
           
           const fallbackValues = getFallbackDataForTemplate(config.template?.id).reskinForm;
           const currentFormValues = getValues();
@@ -441,3 +441,5 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
     </section>
   );
 }
+
+    
