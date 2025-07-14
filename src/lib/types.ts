@@ -62,13 +62,13 @@ export type GameConfig = {
 export type AutofillReskinBlanksInput = {
   gameTemplate: string;
   currentValues: {
-    story: string;
-    theme: string;
-    artStyle: string;
-    environment: string;
-    npcs: string;
-    mainCharacter: string;
-    musicTheme: string;
+    story?: string;
+    theme?: string;
+    artStyle?: string;
+    environment?: string;
+    npcs?: string;
+    mainCharacter?: string;
+    musicTheme?: string;
   };
 };
 
@@ -87,9 +87,11 @@ export type AutofillReskinBlanksOutput = {
 // Types for the Parameter Autofill flow
 export type AutofillParametersBlanksInput = {
   gameTemplate: string;
-  currentRequest: string;
+  currentRequest?: string;
 };
 
 export type AutofillParametersBlanksOutput = {
   filledRequest: string;
 };
+
+    

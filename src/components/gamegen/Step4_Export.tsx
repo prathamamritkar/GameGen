@@ -7,7 +7,7 @@ import { ArrowLeft, Download, RefreshCw } from 'lucide-react';
 import { exportGameAsHtml, createHtmlContentForGame } from '@/lib/export-game';
 import GamePreview from './GamePreview';
 import { useEffect, useState } from 'react';
-import { getFallbackDataForTemplate } from '@/lib/fallback-data';
+import { getFallbackAssetsForTemplate } from './FallbackAssets';
 
 interface Step4Props {
   config: GameConfig;
@@ -25,13 +25,12 @@ export default function Step4Export({ config, onBack, onReset }: Step4Props) {
     
     // Ensure there are assets for the preview, use fallback if necessary.
     if (!finalConfig.assets && finalConfig.template) {
-      finalConfig.assets = getFallbackDataForTemplate(finalConfig.template.id).assets;
+      finalConfig.assets = getFallbackAssetsForTemplate(finalConfig.template.id);
     }
 
     const content = createHtmlContentForGame(finalConfig);
     setHtmlContent(content);
-    // Simulate build time
-    setTimeout(() => setIsLoading(false), 500);
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -44,7 +43,7 @@ export default function Step4Export({ config, onBack, onReset }: Step4Props) {
     if (htmlContent) {
       let finalConfig = { ...config };
        if (!finalConfig.assets && finalConfig.template) {
-         finalConfig.assets = getFallbackDataForTemplate(finalConfig.template.id).assets;
+         finalConfig.assets = getFallbackAssetsForTemplate(finalConfig.template.id);
        }
       exportGameAsHtml(htmlContent, finalConfig);
     }
@@ -85,3 +84,5 @@ export default function Step4Export({ config, onBack, onReset }: Step4Props) {
     </section>
   );
 }
+
+    

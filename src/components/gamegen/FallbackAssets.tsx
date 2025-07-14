@@ -1,24 +1,7 @@
 
 import type { GameTemplateId, Assets } from '@/lib/types';
-import { Bird, Cloud, AlignVerticalSpaceAround, PersonStanding, ShieldAlert, Star, Bot, Circle, Diamond, Grid, Mountain, Car, Ship, Waves } from 'lucide-react';
 
 const svgToDataUri = (svg: string) => `data:image/svg+xml;base64,${btoa(svg)}`;
-
-const IconWrapper = ({ width, height, children, bgColor = "hsl(var(--muted))" }: { width: number, height: number, children: React.ReactNode, bgColor?: string }) => {
-    const svg = `
-    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-        <style>
-            .icon { color: hsl(var(--foreground)); stroke-width: 1.5; }
-            .accent { color: hsl(var(--accent)); }
-            .primary { color: hsl(var(--primary)); }
-            .destructive { color: hsl(var(--destructive)); }
-            .bg { fill: ${bgColor}; }
-        </style>
-        <rect width="100%" height="100%" class="bg" />
-        ${children}
-    </svg>`;
-    return svgToDataUri(svg.replace(/<\/?[^>]+(>|$)/g, "")); // A bit of a hack to get string children
-};
 
 // --- Fallback Asset Components ---
 
@@ -71,3 +54,5 @@ export const getFallbackAssetsForTemplate = (templateId?: GameTemplateId): Asset
         newNpcImages: [assets.npcs],
     };
 };
+
+    

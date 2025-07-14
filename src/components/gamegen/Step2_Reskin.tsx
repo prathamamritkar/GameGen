@@ -237,10 +237,10 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
           let firstFilledField: keyof typeof fallbackValues | null = null;
           
           (Object.keys(fallbackValues) as Array<keyof typeof fallbackValues>).forEach(key => {
-            if (!currentFormValues[key]) {
-              setValue(key, fallbackValues[key], { shouldValidate: true, shouldDirty: true });
+            if (!currentFormValues[key as keyof typeof currentFormValues]) {
+              setValue(key as any, fallbackValues[key as keyof typeof fallbackValues], { shouldValidate: true, shouldDirty: true });
               if (!firstFilledField) {
-                  firstFilledField = key;
+                  firstFilledField = key as any;
               }
             }
           });
@@ -441,5 +441,7 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
     </section>
   );
 }
+
+    
 
     

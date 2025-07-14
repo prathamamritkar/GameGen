@@ -18,6 +18,7 @@ import { ArrowLeft, ArrowRight, SlidersHorizontal, Sparkles } from 'lucide-react
 import { useToast } from '@/hooks/use-toast';
 import GamePreview from './GamePreview';
 import { createHtmlContentForGame } from '@/lib/export-game';
+import { getFallbackAssetsForTemplate } from './FallbackAssets';
 
 interface Step3Props {
   config: GameConfig;
@@ -51,21 +52,15 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
 
   const generatePreview = () => {
     setIsPreviewLoading(true);
-    // Only generate preview if template and assets are available
-    if (config.template && config.assets) {
-        const content = createHtmlContentForGame(config);
-        setHtmlContent(content);
-    } else if (config.template) {
-        // Fallback preview if assets are missing
-        const fallbackConfig = {
+    if (config.template) {
+        const previewConfig = {
             ...config,
-            assets: getFallbackDataForTemplate(config.template.id).assets
-        }
-        const content = createHtmlContentForGame(fallbackConfig);
+            assets: config.assets || getFallbackAssetsForTemplate(config.template.id),
+        };
+        const content = createHtmlContentForGame(previewConfig);
         setHtmlContent(content);
     }
-    // Simulate build time
-    setTimeout(() => setIsPreviewLoading(false), 500); 
+    setIsPreviewLoading(false);
   };
   
   useEffect(() => {
@@ -258,3 +253,5 @@ export default function Step3Parameters({ config, onNext, onBack, onUpdateConfig
     </section>
   );
 }
+
+    
