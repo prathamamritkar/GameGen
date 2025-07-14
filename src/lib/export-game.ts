@@ -55,7 +55,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
         ctx.textAlign = 'center';
         ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
         ctx.font = '20px "Space Grotesk", sans-serif';
-        ctx.fillText('Refresh to restart', canvas.width / 2, canvas.height / 2 + 40);
+        ctx.fillText('Tap or refresh to restart', canvas.width / 2, canvas.height / 2 + 40);
     }
     
     let gameLoop;
@@ -66,6 +66,11 @@ export function createHtmlContentForGame(config: GameConfig): string {
         let bird = { x: 50, y: canvas.height / 2, width: 50, height: 50, velocityY: 0 };
         let pipes = [];
         let frameCount = 0;
+
+        function jump() {
+            if (gameOver) { window.location.reload(); }
+            bird.velocityY = gameParams.lift;
+        }
 
         function flappyLoop() {
           if (gameOver) { drawGameOver(); return; }
@@ -107,7 +112,9 @@ export function createHtmlContentForGame(config: GameConfig): string {
           drawScore();
           requestAnimationFrame(flappyLoop);
         }
-        document.addEventListener('keydown', (e) => { if (e.code === 'Space') bird.velocityY = gameParams.lift; });
+        document.addEventListener('keydown', (e) => { if (e.code === 'Space') jump(); });
+        canvas.addEventListener('mousedown', jump);
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); jump(); });
         gameLoop = flappyLoop;
         break;
 
@@ -115,6 +122,14 @@ export function createHtmlContentForGame(config: GameConfig): string {
         let player = { x: 50, y: canvas.height - 60, width: 50, height: 50, velocityY: 0, onGround: true };
         let obstacles = [];
         let runnerFrame = 0;
+
+        function runnerJump() {
+            if (gameOver) { window.location.reload(); }
+            if (player.onGround) {
+                player.velocityY = -20;
+                player.onGround = false;
+            }
+        }
         
         function runnerLoop() {
             if(gameOver) { drawGameOver(); return; }
@@ -156,7 +171,9 @@ export function createHtmlContentForGame(config: GameConfig): string {
             drawScore();
             requestAnimationFrame(runnerLoop);
         }
-        document.addEventListener('keydown', (e) => { if (e.code === 'Space' && player.onGround) { player.velocityY = -20; player.onGround = false; } });
+        document.addEventListener('keydown', (e) => { if (e.code === 'Space') runnerJump(); });
+        canvas.addEventListener('mousedown', runnerJump);
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); runnerJump(); });
         gameLoop = runnerLoop;
         break;
 
@@ -168,6 +185,17 @@ export function createHtmlContentForGame(config: GameConfig): string {
             }
         }
         let timeLeft = gameParams.gameDuration;
+        
+        function whackAt(x, y) {
+            if (gameOver) { window.location.reload(); }
+            holes.forEach(hole => {
+                if (hole.visible && Math.hypot(x - hole.x, y - (hole.y - 20)) < 35) {
+                    score++;
+                    hole.visible = false;
+                    hole.timer = 0;
+                }
+            });
+        }
 
         function whackLoop() {
             if (gameOver) { drawGameOver(); return; }
@@ -213,17 +241,15 @@ export function createHtmlContentForGame(config: GameConfig): string {
         
         let timerInterval = setInterval(() => { if (!gameOver) timeLeft--; if(timeLeft <= 0) { gameOver = true; clearInterval(timerInterval); } }, 1000);
 
-        canvas.addEventListener('click', (e) => {
+        canvas.addEventListener('mousedown', (e) => {
             const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-            holes.forEach(hole => {
-                if (hole.visible && Math.hypot(mouseX - hole.x, mouseY - (hole.y - 20)) < 35) {
-                    score++;
-                    hole.visible = false;
-                    hole.timer = 0;
-                }
-            });
+            whackAt(e.clientX - rect.left, e.clientY - rect.top);
+        });
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            whackAt(touch.clientX - rect.left, touch.clientY - rect.top);
         });
         gameLoop = whackLoop;
         break;
@@ -268,10 +294,11 @@ export function createHtmlContentForGame(config: GameConfig): string {
 
         function findMatches() { /* Complex logic omitted for brevity */ }
         
-        canvas.addEventListener('click', (e) => {
+        function handleClickOrTap(x, y) {
+             if (gameOver) { window.location.reload(); }
             const rect = canvas.getBoundingClientRect();
-            const c = Math.floor((e.clientX - rect.left - cellSize) / cellSize);
-            const r = Math.floor((e.clientY - rect.top - cellSize) / cellSize);
+            const c = Math.floor((x - rect.left - cellSize) / cellSize);
+            const r = Math.floor((y - rect.top - cellSize) / cellSize);
 
             if (r < 0 || r >= gridSize || c < 0 || c >= gridSize) return;
 
@@ -284,6 +311,12 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 }
                 selected = null;
             }
+        }
+
+        canvas.addEventListener('mousedown', (e) => handleClickOrTap(e.clientX, e.clientY));
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handleClickOrTap(e.touches[0].clientX, e.touches[0].clientY);
         });
 
         createGrid();
@@ -359,15 +392,44 @@ export function createHtmlContentForGame(config: GameConfig): string {
             requestAnimationFrame(crossyLoop);
         }
 
-        document.addEventListener('keydown', (e) => {
-            if(gameOver) return;
-            if(e.code === 'ArrowUp') crossyPlayer.y -= laneHeight;
-            if(e.code === 'ArrowDown') crossyPlayer.y += laneHeight;
-            if(e.code === 'ArrowLeft') crossyPlayer.x -= 30;
-            if(e.code === 'ArrowRight') crossyPlayer.x += 30;
+        function movePlayer(dir) {
+            if(gameOver) { window.location.reload(); return; }
+            if(dir === 'up') crossyPlayer.y -= laneHeight;
+            if(dir === 'down') crossyPlayer.y += laneHeight;
+            if(dir === 'left') crossyPlayer.x -= 30;
+            if(dir === 'right') crossyPlayer.x += 30;
             crossyPlayer.y = Math.max(0, Math.min(canvas.height - crossyPlayer.height, crossyPlayer.y));
             crossyPlayer.x = Math.max(0, Math.min(canvas.width - crossyPlayer.width, crossyPlayer.x));
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'ArrowUp') movePlayer('up');
+            if (e.code === 'ArrowDown') movePlayer('down');
+            if (e.code === 'ArrowLeft') movePlayer('left');
+            if (e.code === 'ArrowRight') movePlayer('right');
         });
+        
+        let touchStartX = 0;
+        let touchStartY = 0;
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }, { passive: false });
+        canvas.addEventListener('touchend', e => {
+            e.preventDefault();
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = touchEndY - touchStartY;
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                if (deltaX > 0) movePlayer('right');
+                else movePlayer('left');
+            } else {
+                if (deltaY > 0) movePlayer('down');
+                else movePlayer('up');
+            }
+        }, { passive: false });
 
         gameLoop = crossyLoop;
         break;
@@ -407,12 +469,13 @@ export function createHtmlContentForGame(config: GameConfig): string {
     <html lang="en">
     <head>
       <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
       <title>${gameTitle}</title>
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
       <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #23272F; color: white; overflow: hidden; }
+        body { font-family: sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #23272F; color: white; overflow: hidden; touch-action: none; }
         #game-canvas { border: 2px solid #FFAA5A; background-image: url(${environmentImg}); background-size: cover; background-position: center; image-rendering: pixelated; width: 100%; height: 100%; }
         .canvas-container { width: 100%; max-width: 800px; aspect-ratio: 16 / 9; }
         img { display: none; }
