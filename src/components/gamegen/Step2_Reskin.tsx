@@ -36,9 +36,9 @@ const reskinSchema = z.object({
   npcs: z.string().min(3, 'Describe the NPCs.'),
   mainCharacter: z.string().min(3, 'Describe the main character.'),
   difficultySettings: z.object({
-    easy: z.string().min(3, 'Describe easy difficulty.'),
-    medium: z.string().min(3, 'Describe medium difficulty.'),
-    hard: z.string().min(3, 'Describe hard difficulty.'),
+    easy: z.string().optional(),
+    medium: z.string().optional(),
+    hard: z.string().optional(),
   }),
   musicTheme: z.string().min(3, 'Music theme is required.'),
   musicDuration: z.number().min(5).max(60),
@@ -88,7 +88,11 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
       environment: data.environment,
       npcs: data.npcs,
       mainCharacter: data.mainCharacter,
-      difficultySettings: data.difficultySettings,
+      difficultySettings: {
+          easy: data.difficultySettings.easy || 'Slower speed, fewer obstacles.',
+          medium: data.difficultySettings.medium || 'Normal speed and obstacles.',
+          hard: data.difficultySettings.hard || 'Faster speed, many obstacles.',
+      },
     };
     onUpdateConfig({ reskinInput });
 
@@ -200,7 +204,7 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
             Customize with AI
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-            Fill in the details below, or let our AI autofill the blanks to get you started.
+            Fill in the details below, or let our AI autofill to get you started.
             </p>
         </div>
 
@@ -377,5 +381,3 @@ export default function Step2Reskin({ config, onNext, onBack, onUpdateConfig }: 
     </section>
   );
 }
-
-    
