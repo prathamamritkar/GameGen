@@ -530,6 +530,11 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     crossyPlayer.y = Math.max(0, Math.min(canvas.height - crossyPlayer.height, crossyPlayer.y));
                     crossyPlayer.x = Math.max(0, Math.min(canvas.width - crossyPlayer.width, crossyPlayer.x));
                 }
+
+                 if (gameOver) {
+                    canvas.addEventListener('click', handleRestart, { once: true });
+                    canvas.addEventListener('touchstart', handleRestart, { once: true });
+                }
                 break;
               }
               default:
@@ -559,7 +564,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 canvas.addEventListener('mousedown', window.jump);
                 canvas.addEventListener('touchstart', (e) => { e.preventDefault(); window.jump(); });
                 document.addEventListener('keydown', (e) => { if (e.code === 'Space') window.jump(); });
-                window.jump();
             } else if (gameType === 'speed-runner') {
                 canvas.addEventListener('mousedown', window.runnerJump);
                 canvas.addEventListener('touchstart', (e) => { e.preventDefault(); window.runnerJump(); }, { passive: false });
@@ -661,5 +665,6 @@ export function exportGameAsHtml(htmlContent: string, config: GameConfig) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
 
 
