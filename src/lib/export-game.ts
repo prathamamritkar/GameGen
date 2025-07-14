@@ -180,7 +180,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                         ctx.fillStyle = 'red';
                         ctx.fillRect(obs.x, obsY, obs.width, obs.height);
                         
-                        // 2D Bounding Box Collision
                         if (player.x < obs.x + obs.width &&
                             player.x + player.width > obs.x &&
                             player.y < obsY + obs.height &&
@@ -217,7 +216,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 }
                 
                 let timerInterval;
-                function startTimer() {
+                window.startTimer = function() {
                     timerInterval = setInterval(() => { 
                         if (!gameOver && gameStarted) { 
                             timeLeft--; 
@@ -244,12 +243,12 @@ export function createHtmlContentForGame(config: GameConfig): string {
                         ctx.fill();
 
                         if (hole.timer > 0) {
-                           hole.timer -= 16; // approx 1 frame
+                           hole.timer -= 16;
                         } else if (hole.visible) {
                             hole.visible = false;
                         }
                         
-                        if(!hole.visible && hole.timer <= 0 && Math.random() < 0.01) { // Chance to pop up
+                        if(!hole.visible && hole.timer <= 0 && Math.random() < 0.01) {
                             hole.visible = true;
                             hole.timer = gameParams.moleVisibleTime;
                         }
@@ -274,8 +273,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     drawScore();
                     requestAnimationFrame(gameLoop);
                 }
-                
-                startTimer();
                 break;
               }
               case 'match-3': {
@@ -316,8 +313,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     requestAnimationFrame(gameLoop);
                 }
 
-                function findMatches() { /* Complex logic omitted for brevity */ }
-                
                 window.handleClickOrTap = function(ex, ey) {
                     if (gameOver) { window.location.reload(); return; }
 
@@ -331,8 +326,8 @@ export function createHtmlContentForGame(config: GameConfig): string {
                         selected = {r, c};
                     } else {
                         if(Math.abs(selected.r - r) + Math.abs(selected.c - c) === 1) {
-                            [grid[selected.r][selected.c], grid[r][c]] = [grid[r][c], grid[selected.r][selected.c]]; // Swap
-                            score += 10; // Simplified scoring
+                            [grid[selected.r][selected.c], grid[r][c]] = [grid[r][c], grid[selected.r][selected.c]];
+                            score += 10;
                         }
                         selected = null;
                     }
@@ -359,7 +354,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     if(gameOver) { drawGameOver(); return; }
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     
-                    ctx.fillStyle = '#4CAF50'; // Safe zones
+                    ctx.fillStyle = '#4CAF50';
                     ctx.fillRect(0, 0, canvas.width, laneHeight);
                     ctx.fillRect(0, canvas.height - laneHeight, canvas.width, laneHeight);
 
@@ -397,7 +392,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                                 crossyPlayer.x += currentLane.speed;
                                 if (crossyPlayer.x + crossyPlayer.width < 0 || crossyPlayer.x > canvas.width) gameOver = true;
                             } else {
-                                gameOver = true; // Fell in water
+                                gameOver = true;
                             }
                         }
                     }
@@ -411,7 +406,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     
                     if(crossyPlayer.y < laneHeight && !gameOver) {
                         score++;
-                        crossyPlayer.y = canvas.height - 40; // Reset to start
+                        crossyPlayer.y = canvas.height - 40;
                         crossyPlayer.x = canvas.width / 2 - 15;
                     }
 
@@ -454,7 +449,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
             canvas.removeEventListener('mousedown', handleFirstInput);
             canvas.removeEventListener('touchstart', handleFirstInput);
             
-            // Set up game-specific event handlers
             if (gameType === 'flappy-bird') {
                 document.addEventListener('keydown', (e) => { if (e.code === 'Space') window.jump(); });
                 canvas.addEventListener('mousedown', window.jump);
@@ -476,6 +470,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     const touch = e.touches[0];
                     window.whackAt(touch.clientX - rect.left, touch.clientY - rect.top);
                 });
+                window.startTimer();
             } else if (gameType === 'match-3') {
                 canvas.addEventListener('mousedown', (e) => window.handleClickOrTap(e.clientX, e.clientY));
                 canvas.addEventListener('touchstart', (e) => {
@@ -561,6 +556,3 @@ export function exportGameAsHtml(htmlContent: string, config: GameConfig) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-
-
-
