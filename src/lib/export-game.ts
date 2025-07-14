@@ -201,7 +201,9 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     });
                     
                     drawScore();
-                    requestAnimationFrame(gameLoop);
+                    if (!gameOver) {
+                      requestAnimationFrame(gameLoop);
+                    }
                 }
                 break;
               }
@@ -209,7 +211,13 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 let holes = [];
                 for (let i = 0; i < 3; i++) {
                     for (let j = 0; j < 3; j++) {
-                        holes.push({ x: 150 + j * 200, y: 100 + i * 150, visible: false, timer: 0 });
+                        holes.push({ 
+                            x: 150 + j * 200, 
+                            y: 100 + i * 150, 
+                            visible: false, 
+                            hideTimer: 0, // Time until it hides
+                            spawnTimer: Math.random() * 2000 + 500 // Time until it appears
+                        });
                     }
                 }
                 let timeLeft = gameParams.gameDuration;
@@ -220,7 +228,8 @@ export function createHtmlContentForGame(config: GameConfig): string {
                         if (hole.visible && Math.hypot(ex - hole.x, ey - (hole.y - 20)) < 35) {
                             score++;
                             hole.visible = false;
-                            hole.timer = 0;
+                            hole.hideTimer = 0;
+                            hole.spawnTimer = Math.random() * 3000 + 1000;
                         }
                     });
                 }
@@ -252,17 +261,20 @@ export function createHtmlContentForGame(config: GameConfig): string {
                         ctx.arc(hole.x, hole.y, 50, 0, Math.PI * 2);
                         ctx.fill();
 
-                        if (hole.timer > 0) {
-                           hole.timer -= 16;
-                        } else if (hole.visible) {
-                            hole.visible = false;
+                        if (hole.visible) {
+                            hole.hideTimer -= 16;
+                            if (hole.hideTimer <= 0) {
+                                hole.visible = false;
+                                hole.spawnTimer = Math.random() * 3000 + 1000;
+                            }
+                        } else {
+                            hole.spawnTimer -= 16;
+                            if (hole.spawnTimer <= 0) {
+                                hole.visible = true;
+                                hole.hideTimer = gameParams.moleVisibleTime;
+                            }
                         }
                         
-                        if(!hole.visible && hole.timer <= 0 && Math.random() < 0.01) {
-                            hole.visible = true;
-                            hole.timer = gameParams.moleVisibleTime;
-                        }
-
                         if(hole.visible) {
                             if (mainCharElement.complete && mainCharElement.naturalHeight !== 0) {
                               ctx.drawImage(mainCharElement, hole.x - 35, hole.y - 70, 70, 70);
@@ -281,7 +293,9 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     ctx.fillText('Time: ' + Math.ceil(timeLeft), canvas.width - 10, 30);
                     
                     drawScore();
-                    requestAnimationFrame(gameLoop);
+                    if (!gameOver) {
+                        requestAnimationFrame(gameLoop);
+                    }
                 }
                 break;
               }
@@ -386,6 +400,7 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     while (clearMatches()) {
                         await new Promise(res => setTimeout(res, 200));
                         dropGems();
+                        await new Promise(res => setTimeout(res, 200));
                         fillGems();
                         drawGrid();
                         await new Promise(res => setTimeout(res, 200));
@@ -408,13 +423,24 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     } else {
                         if(Math.abs(selected.r - r) + Math.abs(selected.c - c) === 1) {
                             [grid[selected.r][selected.c], grid[r][c]] = [grid[r][c], grid[selected.r][selected.c]];
-                            if (findMatches().length > 0) {
-                                handleMatches();
-                            } else {
-                                setTimeout(() => {
+                            grid[selected.r][selected.c].r = selected.r;
+                            grid[selected.r][selected.c].c = selected.c;
+                            grid[r][c].r = r;
+                            grid[r][c].c = c;
+                            
+                            isSwapping = true;
+                            setTimeout(async () => {
+                                if (findMatches().length > 0) {
+                                    await handleMatches();
+                                } else {
                                     [grid[selected.r][selected.c], grid[r][c]] = [grid[r][c], grid[selected.r][selected.c]];
-                                }, 200);
-                            }
+                                    grid[selected.r][selected.c].r = selected.r;
+                                    grid[selected.r][selected.c].c = selected.c;
+                                    grid[r][c].r = r;
+                                    grid[r][c].c = c;
+                                }
+                                isSwapping = false;
+                            }, 200);
                         }
                         selected = null;
                     }
@@ -448,7 +474,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                 
                 gameLoop = function() {
                     if(gameOver) { 
-                        drawGameOver();
                         return;
                     }
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -520,7 +545,12 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     }
 
                     drawScore();
-                    requestAnimationFrame(gameLoop);
+
+                    if(gameOver) {
+                        drawGameOver();
+                    } else {
+                        requestAnimationFrame(gameLoop);
+                    }
                 }
 
                 window.movePlayer = function(dir) {
@@ -533,10 +563,6 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     crossyPlayer.x = Math.max(0, Math.min(canvas.width - crossyPlayer.width, crossyPlayer.x));
                 }
 
-                 if (gameOver) {
-                    canvas.addEventListener('click', handleRestart, { once: true });
-                    canvas.addEventListener('touchstart', handleRestart, { once: true });
-                }
                 break;
               }
               default:
@@ -594,16 +620,21 @@ export function createHtmlContentForGame(config: GameConfig): string {
                     }
                 });
                  let touchStartX = 0, touchStartY = 0;
-                canvas.addEventListener('touchstart', e => { e.preventDefault(); touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; }, { passive: false });
+                canvas.addEventListener('touchstart', e => { 
+                    e.preventDefault(); 
+                    if(gameOver) return;
+                    touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY; 
+                }, { passive: false });
                 canvas.addEventListener('touchend', e => {
                     e.preventDefault();
+                    if(gameOver) return;
                     const deltaX = e.changedTouches[0].clientX - touchStartX;
                     const deltaY = e.changedTouches[0].clientY - touchStartY;
                     if (Math.abs(deltaX) > Math.abs(deltaY)) window.movePlayer(deltaX > 0 ? 'right' : 'left');
                     else window.movePlayer(deltaY > 0 ? 'down' : 'up');
                 }, { passive: false });
-                 canvas.addEventListener('click', () => { if(gameOver) handleRestart() }, { once: false });
-                 canvas.addEventListener('touchstart', () => { if(gameOver) handleRestart() }, { once: false });
+                 canvas.addEventListener('click', () => { if(gameOver) handleRestart() });
+                 canvas.addEventListener('touchstart', () => { if(gameOver) handleRestart() });
             }
 
             requestAnimationFrame(gameLoop);
@@ -667,6 +698,7 @@ export function exportGameAsHtml(htmlContent: string, config: GameConfig) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
 
 
 
