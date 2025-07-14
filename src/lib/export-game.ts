@@ -2,7 +2,7 @@
 'use client';
 import type { GameConfig } from './types';
 
-function createHtmlTemplate(config: GameConfig): string {
+export function createHtmlContentForGame(config: GameConfig): string {
   const gameTitle = config.template?.name ? `GameGen - ${config.template.name}` : "My AI Game";
   const theme = config.reskinInput?.theme || 'A fun game';
   const mainCharacterDesc = config.reskinInput?.mainCharacter || 'The hero';
@@ -13,9 +13,10 @@ function createHtmlTemplate(config: GameConfig): string {
 
   const gameLogic = `
     const canvas = document.getElementById('game-canvas');
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const mainCharElement = document.getElementById('main-char');
-    const gameParams = JSON.parse(document.getElementById('game-params').textContent);
+    const gameParams = JSON.parse(document.getElementById('game-params')?.textContent || '{}');
     let score = 0;
     let gameOver = false;
 
@@ -125,7 +126,7 @@ function createHtmlTemplate(config: GameConfig): string {
               ctx.fillRect(player.x, player.y, player.width, player.height);
             }
 
-            if(Math.random() < gameParams.obstacleFrequency) {
+            if(runnerFrame % Math.floor(1 / gameParams.obstacleFrequency) === 0) {
                 obstacles.push({x: canvas.width, width: 30, height: 30});
             }
 
@@ -165,14 +166,17 @@ function createHtmlTemplate(config: GameConfig): string {
                 ctx.arc(hole.x, hole.y, 50, 0, Math.PI * 2);
                 ctx.fill();
 
-                hole.timer -= 16;
-                if (hole.timer <= 0) {
+                if (hole.timer > 0) {
+                   hole.timer -= 16;
+                } else {
                     hole.visible = false;
-                    if(Math.random() < 0.01) { // Chance to pop up
-                        hole.visible = true;
-                        hole.timer = gameParams.moleVisibleTime;
-                    }
                 }
+                
+                if(!hole.visible && hole.timer <= 0 && Math.random() < 0.01) { // Chance to pop up
+                    hole.visible = true;
+                    hole.timer = gameParams.moleVisibleTime;
+                }
+
                 if(hole.visible) {
                     if (mainCharElement.complete && mainCharElement.naturalHeight !== 0) {
                       ctx.drawImage(mainCharElement, hole.x - 35, hole.y - 70, 70, 70);
@@ -194,7 +198,7 @@ function createHtmlTemplate(config: GameConfig): string {
             requestAnimationFrame(whackLoop);
         }
         
-        setInterval(() => { if (!gameOver) timeLeft--; if(timeLeft <= 0) gameOver = true; }, 1000);
+        let timerInterval = setInterval(() => { if (!gameOver) timeLeft--; if(timeLeft <= 0) { gameOver = true; clearInterval(timerInterval); } }, 1000);
 
         canvas.addEventListener('click', (e) => {
             const rect = canvas.getBoundingClientRect();
@@ -281,7 +285,7 @@ function createHtmlTemplate(config: GameConfig): string {
         for (let i = 0; i < gameParams.lanes; i++) {
             const type = Math.random() > 0.5 ? 'traffic' : 'log';
             lanes.push({
-                y: i * laneHeight + laneHeight/2,
+                y: i * laneHeight + laneHeight,
                 type: type,
                 speed: (type === 'traffic' ? gameParams.trafficSpeed : gameParams.logSpeed) * (Math.random() > 0.5 ? 1 : -1),
                 items: [{x: Math.random() * canvas.width, width: 80}]
@@ -292,24 +296,38 @@ function createHtmlTemplate(config: GameConfig): string {
             if(gameOver) { drawGameOver(); return; }
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
+            ctx.fillStyle = '#4CAF50'; // Safe zone
+            ctx.fillRect(0, canvas.height - laneHeight, canvas.width, laneHeight);
+            ctx.fillRect(0, 0, canvas.width, laneHeight);
+
             lanes.forEach(lane => {
                 ctx.fillStyle = lane.type === 'traffic' ? '#555' : '#1E90FF';
                 ctx.fillRect(0, lane.y - laneHeight / 2, canvas.width, lane.height);
                 
+                let onLog = false;
                 lane.items.forEach(item => {
                     item.x += lane.speed;
-                    if(item.x > canvas.width + item.width) item.x = -item.width;
-                    if(item.x < -item.width) item.x = canvas.width;
+                    if(lane.speed > 0 && item.x > canvas.width + item.width) item.x = -item.width;
+                    if(lane.speed < 0 && item.x < -item.width) item.x = canvas.width;
                     
-                    ctx.fillStyle = lane.type === 'traffic' ? 'yellow' : 'brown';
+                    ctx.fillStyle = lane.type === 'traffic' ? 'yellow' : '#8B4513';
                     ctx.fillRect(item.x, lane.y - 15, item.width, 30);
                     
                     if (crossyPlayer.y > lane.y - laneHeight / 2 && crossyPlayer.y < lane.y + laneHeight / 2) {
                         if (crossyPlayer.x < item.x + item.width && crossyPlayer.x + crossyPlayer.width > item.x) {
                            if (lane.type === 'traffic') gameOver = true;
+                           if (lane.type === 'log') onLog = true;
                         }
                     }
                 });
+                
+                if (lane.type === 'log' && crossyPlayer.y > lane.y - laneHeight / 2 && crossyPlayer.y < lane.y + laneHeight / 2) {
+                    if (onLog) {
+                       crossyPlayer.x += lane.speed;
+                    } else {
+                       gameOver = true;
+                    }
+                }
             });
 
             if (mainCharElement.complete && mainCharElement.naturalHeight !== 0) {
@@ -319,7 +337,7 @@ function createHtmlTemplate(config: GameConfig): string {
               ctx.fillRect(crossyPlayer.x, crossyPlayer.y, crossyPlayer.width, crossyPlayer.height);
             }
             
-            if(crossyPlayer.y < laneHeight / 2 && !gameOver) {
+            if(crossyPlayer.y < laneHeight && !gameOver) {
                 score++;
                 crossyPlayer.y = canvas.height - 40; // Reset
             }
@@ -347,7 +365,7 @@ function createHtmlTemplate(config: GameConfig): string {
         gameLoop = function() {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           x = (x + 2) % (canvas.width - 50);
-          if (mainCharElement.complete && mainCharElement.naturalHeight !== 0) {
+          if (mainCharElement && mainCharElement.complete && mainCharElement.naturalHeight !== 0) {
             ctx.drawImage(mainCharElement, x, y, 50, 50);
           } else {
             ctx.fillStyle = 'orange';
@@ -359,7 +377,7 @@ function createHtmlTemplate(config: GameConfig): string {
     }
 
 
-    window.onload = () => {
+    function startGame() {
       // Add gameType to params so the switch statement works
       if (config.template?.id) {
           gameParams.gameType = config.template.id;
@@ -367,6 +385,12 @@ function createHtmlTemplate(config: GameConfig): string {
       document.getElementById('bgm')?.play().catch(e => console.log("Audio play failed:", e));
       gameLoop();
     };
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(startGame, 1);
+    } else {
+        document.addEventListener('DOMContentLoaded', startGame);
+    }
   `;
 
   return `
@@ -380,14 +404,17 @@ function createHtmlTemplate(config: GameConfig): string {
       <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
       <style>
         body { font-family: sans-serif; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #23272F; color: white; overflow: hidden; }
-        #game-canvas { border: 2px solid #FFAA5A; background-image: url(${environmentImg}); background-size: cover; background-position: center; image-rendering: pixelated; }
+        #game-canvas { border: 2px solid #FFAA5A; background-image: url(${environmentImg}); background-size: cover; background-position: center; image-rendering: pixelated; width: 100%; height: 100%; }
+        .canvas-container { width: 100%; max-width: 800px; aspect-ratio: 16 / 9; }
         img { display: none; }
-        h1 { font-family: "Space Grotesk", sans-serif; color: #FFAA5A; margin-bottom: 1rem; }
+        h1 { display:none; }
       </style>
     </head>
     <body>
       <h1>${theme} starring ${mainCharacterDesc}</h1>
-      <canvas id="game-canvas" width="800" height="600"></canvas>
+      <div class="canvas-container">
+        <canvas id="game-canvas" width="800" height="450"></canvas>
+      </div>
       <img id="main-char" src="${mainCharImg}" />
       ${musicSrc ? `<audio id="bgm" src="${musicSrc}" loop></audio>` : ''}
       <script id="game-params" type="application/json">${params}</script>
@@ -401,13 +428,12 @@ function createHtmlTemplate(config: GameConfig): string {
   `;
 }
 
-export function exportGameAsHtml(config: GameConfig) {
+export function exportGameAsHtml(htmlContent: string, config: GameConfig) {
   if (typeof window === 'undefined' || !config.template) {
     console.error("Export can only be done on the client side with a selected template.");
     return;
   }
 
-  const htmlContent = createHtmlTemplate(config);
   const blob = new Blob([htmlContent], { type: 'text/html' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

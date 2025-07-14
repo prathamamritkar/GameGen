@@ -1,11 +1,12 @@
 "use client";
 
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import type { GameConfig } from '@/lib/types';
 import { ArrowLeft, Download, RefreshCw } from 'lucide-react';
-import { exportGameAsHtml } from '@/lib/export-game';
+import { exportGameAsHtml, createHtmlContentForGame } from '@/lib/export-game';
+import GamePreview from './GamePreview';
+import { useEffect, useState } from 'react';
 
 interface Step4Props {
   config: GameConfig;
@@ -14,63 +15,55 @@ interface Step4Props {
 }
 
 export default function Step4Export({ config, onBack, onReset }: Step4Props) {
+  const [htmlContent, setHtmlContent] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(true);
+    if (config.template) {
+      const content = createHtmlContentForGame(config);
+      setHtmlContent(content);
+    } else {
+      setHtmlContent(null);
+    }
+    // Simulate build time
+    setTimeout(() => setIsLoading(false), 500); 
+  }, [config]);
+
 
   const handleExport = () => {
-    exportGameAsHtml(config);
+    if (htmlContent) {
+      exportGameAsHtml(htmlContent, config);
+    }
   };
 
   return (
-    <section className="mx-auto max-w-2xl text-center">
+    <section className="mx-auto max-w-4xl text-center">
       <h2 className="font-headline text-3xl font-bold tracking-tight sm:text-4xl">
         Your Game Is Ready!
       </h2>
       <p className="mt-4 text-lg text-muted-foreground">
-        Download your game as a single HTML file and play it anywhere, anytime.
+        Preview your game below, or download it and play it anywhere, anytime.
       </p>
 
-      <Card className="mt-12 text-left">
-        <CardHeader>
-          <CardTitle className="font-headline">Game Summary</CardTitle>
-          <CardDescription>A quick look at your creation.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {config.template ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-              <div className="sm:col-span-1">
-                 {config.assets?.newMainCharacterImage ? (
-                    <div className="relative aspect-square w-full overflow-hidden rounded-lg border bg-muted">
-                        <Image src={config.assets.newMainCharacterImage} alt="Main Character" layout="fill" objectFit="contain" />
-                    </div>
-                    ) : (
-                    <div className="flex aspect-square w-full items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                        No Image
-                    </div>
-                )}
-              </div>
-              <div className="space-y-4 sm:col-span-2">
-                <div>
-                  <h3 className="font-bold">Template</h3>
-                  <p className="text-muted-foreground">{config.template.name}</p>
-                </div>
-                <div>
-                  <h3 className="font-bold">Theme</h3>
-                  <p className="text-muted-foreground">{config.reskinInput?.theme || 'N/A'}</p>
-                </div>
-                <div>
-                  <h3 className="font-bold">Story</h3>
-                  <p className="text-muted-foreground line-clamp-2">{config.reskinInput?.story || 'N/A'}</p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <p className="text-muted-foreground">No game data available. Please start over.</p>
-          )}
-        </CardContent>
-      </Card>
+      <div className="mt-8 mb-6">
+        <GamePreview 
+            htmlContent={htmlContent} 
+            isLoading={isLoading}
+            onRebuild={() => { /* This could trigger a re-generation step if needed */
+                setIsLoading(true);
+                 if (config.template) {
+                    const content = createHtmlContentForGame(config);
+                    setHtmlContent(content);
+                }
+                setTimeout(() => setIsLoading(false), 500);
+            }}
+        />
+      </div>
       
       <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-        <Button size="lg" onClick={handleExport} disabled={!config.template}>
-            <Download className="mr-2 h-5 w-5" /> Export Game
+        <Button size="lg" onClick={handleExport} disabled={!htmlContent || isLoading}>
+            <Download className="mr-2 h-5 w-5" /> Export as HTML
         </Button>
         <Button size="lg" variant="outline" onClick={onReset}>
             <RefreshCw className="mr-2 h-5 w-5" /> Create New Game
