@@ -1,8 +1,8 @@
-import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { GameTemplate } from '@/lib/types';
 import { ArrowRight } from 'lucide-react';
+import { TemplatePreviewCard } from './TemplatePreviewCard';
 
 interface GameCardProps {
   template: GameTemplate;
@@ -17,14 +17,8 @@ export default function GameCard({ template, onSelect }: GameCardProps) {
         <CardDescription>{template.description}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col justify-between">
-        <div className="relative mb-4 aspect-video w-full">
-            <Image 
-                src={template.image} 
-                alt={template.name} 
-                fill
-                className="rounded-md object-cover"
-                data-ai-hint={template.dataAiHint}
-            />
+        <div className="relative mb-4 aspect-video w-full rounded-md border bg-muted/50 overflow-hidden">
+          <TemplatePreviewCard templateId={template.id} />
         </div>
         <Button onClick={() => onSelect(template)} className="w-full">
           Select Template <ArrowRight className="ml-2 h-4 w-4" />
