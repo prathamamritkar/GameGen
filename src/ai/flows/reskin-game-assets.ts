@@ -40,10 +40,10 @@ export async function reskinGameAssets(input: ReskinGameAssetsInput): Promise<Re
   return reskinGameAssetsFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'reskinGameAssetsPrompt',
+const descriptionPrompt = ai.definePrompt({
+  name: 'reskinGameDescriptionPrompt',
   input: {schema: ReskinGameAssetsInputSchema},
-  output: {schema: ReskinGameAssetsOutputSchema},
+  output: {schema: z.object({ newAssetsDescription: z.string().describe('Description of all the new visual assets for the reskinned game, including character, environment, and NPCs based on user input.') })},
   prompt: `You are an expert game designer specializing in reskinning existing game templates with new visual assets.
 
 You will use the following information to generate ideas for new visual assets, including the main character, environment, and NPCs.
@@ -57,9 +57,7 @@ NPCs: {{{npcs}}}
 Main Character: {{{mainCharacter}}}
 Difficulty Settings: Easy: {{{difficultySettings.easy}}}, Medium: {{{difficultySettings.medium}}}, Hard: {{{difficultySettings.hard}}}
 
-Based on the above information, please provide a detailed description of all the new visual assets for the reskinned game, including the main character, environment, and NPCs. Also, generate data URIs for the new main character image, the new environment image, and an array of data URIs for the new NPC images.
-
-In your response, please provide the description of all new visual assets in the "newAssetsDescription" field. Also, populate the "newMainCharacterImage", "newEnvironmentImage", and "newNpcImages" fields with the generated data URIs.`,
+Based on the above information, please provide a detailed description of all the new visual assets for the reskinned game.`,
   config: {
     safetySettings: [
       {
@@ -90,30 +88,35 @@ const reskinGameAssetsFlow = ai.defineFlow(
   },
   async input => {
 
-    const generationResult = await ai.generate({
-      prompt: `Generate an image of the main character, whose description is ${input.mainCharacter}`,
+    const { output: descriptionOutput } = await descriptionPrompt(input);
+    if (!descriptionOutput) {
+        throw new Error("Failed to generate asset descriptions.");
+    }
+    
+    const imageGenPrompt = `Based on the user's request for a game with a theme of "${input.theme}" and an art style of "${input.artStyle}"`;
+
+    const mainCharacterImagePromise = ai.generate({
+      prompt: `${imageGenPrompt}, generate an image of the main character, whose description is: ${input.mainCharacter}`,
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
       config: {
-        responseModalities: ['TEXT', 'IMAGE'], // MUST provide both TEXT and IMAGE, IMAGE only won't work
+        responseModalities: ['TEXT', 'IMAGE'],
       },
     });
 
-    const generationResult2 = await ai.generate({
-      prompt: `Generate an image of the environment, whose description is ${input.environment}`,
+    const environmentImagePromise = ai.generate({
+      prompt: `${imageGenPrompt}, generate an image of the environment, whose description is: ${input.environment}`,
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
       config: {
-        responseModalities: ['TEXT', 'IMAGE'], // MUST provide both TEXT and IMAGE, IMAGE only won't work
+        responseModalities: ['TEXT', 'IMAGE'],
       },
     });
 
-    const {output} = await prompt({
-      ...input,
-    });
+    const [mainCharacterResult, environmentResult] = await Promise.all([mainCharacterImagePromise, environmentImagePromise]);
 
     return {
-      ...output!,
-      newMainCharacterImage: generationResult.media?.url ?? 'data:image/png;base64,',
-      newEnvironmentImage: generationResult2.media?.url ?? 'data:image/png;base64,',
+      newAssetsDescription: descriptionOutput.newAssetsDescription,
+      newMainCharacterImage: mainCharacterResult.media?.url ?? '',
+      newEnvironmentImage: environmentResult.media?.url ?? '',
       newNpcImages: [],
     };
   }
